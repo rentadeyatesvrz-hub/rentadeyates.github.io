@@ -48,23 +48,18 @@
         </div>
     </section>
 
-        <!-- RESERVAS -->
+    <!-- RESERVAS -->
     <section id="reservas" class="py-24">
         <div class="max-w-7xl mx-auto px-6 text-center">
             <h2 class="text-5xl font-bold mb-4">Reserva en Segundos</h2>
-            <p class="text-xl text-amber-300 mb-4">Calendario en tiempo real + horarios disponibles 
+            <p class="text-xl text-amber-300">Calendario en tiempo real + horarios disponibles 
                 <a href="https://console.firebase.google.com/project/elite-yacht-rentals/firestore/data/~2Freservas" 
                    target="_blank" 
                    class="underline hover:text-amber-300 ml-2">
                    Ver en Firebase Console →
                 </a>
             </p>
-            <!-- Línea agregada: nombre y apellido visible -->
-            <p class="text-lg text-amber-400 mb-6">Reservas gestionadas por: [Tu Nombre] [Tu Apellido]</p>
-            
-            <button onclick="abrirModal()" class="mt-4 bg-amber-500 text-black px-12 py-6 text-xl rounded-2xl hover:scale-105 transition">
-                Abrir Calendario de Reservas
-            </button>
+            <button onclick="abrirModal()" class="mt-8 bg-amber-500 text-black px-12 py-6 text-xl rounded-2xl hover:scale-105 transition">Abrir Calendario de Reservas</button>
         </div>
     </section>
 
@@ -96,6 +91,16 @@
                             <option value="17:00">17:00</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- Campos nuevos agregados: Nombre y Apellido -->
+                <div>
+                    <label class="block text-sm mb-2">Nombre</label>
+                    <input id="nombre" type="text" class="w-full bg-slate-800 border border-amber-500/30 rounded-2xl p-4 text-white" placeholder="Tu nombre" required>
+                </div>
+                <div>
+                    <label class="block text-sm mb-2">Apellido</label>
+                    <input id="apellido" type="text" class="w-full bg-slate-800 border border-amber-500/30 rounded-2xl p-4 text-white" placeholder="Tu apellido" required>
                 </div>
                 
                 <button onclick="realizarReserva()" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold text-xl py-6 rounded-2xl transition">Confirmar Reserva</button>
