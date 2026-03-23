@@ -90,15 +90,6 @@ async function realizarReserva() {
         return;
     }
 
-    // Captura y validación de nombre y apellido
-    const nombre = document.getElementById('nombre').value.trim();
-    const apellido = document.getElementById('apellido').value.trim();
-
-    if (!nombre || !apellido) {
-        alert("❌ Por favor ingresa tu nombre y apellido");
-        return;
-    }
-
     const yate = yates.find(y => y.id === yateId);
 
     const snapshot = await db.collection("reservas")
@@ -117,12 +108,10 @@ async function realizarReserva() {
         yateId: yateId,
         fecha: fecha,
         hora: hora,
-        nombre: nombre,
-        apellido: apellido,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    alert(`✅ Reserva confirmada en la nube!\n${yate.nombre}\n${fecha} a las ${hora}\nReservado por: ${nombre} ${apellido}`);
+    alert(`✅ Reserva confirmada en la nube!\n${yate.nombre}\n${fecha} a las ${hora}`);
     cerrarModal();
 }
 
@@ -174,4 +163,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     cargarReservas();
+});
+
+// =============================================
+// WHATSAPP MENU (agregado al final - sin tocar nada anterior)
+// =============================================
+function abrirWhatsApp() {
+    const phone = "521XXXXXXXXXX"; // ← CAMBIA por tu número real (con 52 al inicio)
+    
+    const mensaje = `¡Hola! Gracias por visitarnos 👋
+
+Tenemos el siguiente menú de opciones:
+
+1. Renta de yates y Lanchas
+2. Venta de yates y Lanchas
+3. Venta de Remolques o Mantenimiento
+4. Hablar con un Asesor
+
+Responde con el número de la opción que deseas.
+
+Enlaces directos (con Bitly para geolocalización y seguimiento):
+1. https://bit.ly/renta-elite
+2. https://bit.ly/venta-yates
+3. https://bit.ly/remolques-mantenimiento
+4. https://bit.ly/asesor-elite`;
+
+    const encoded = encodeURIComponent(mensaje);
+    window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
+}
+
+// Activar el botón flotante
+document.getElementById('whatsapp-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    abrirWhatsApp();
 });
