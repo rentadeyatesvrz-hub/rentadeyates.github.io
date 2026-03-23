@@ -1,6 +1,7 @@
 // ==================== FIREBASE CONFIG ====================
 // PASO 3: PEGA AQUÍ TUS DATOS REALES del Firebase Console
 // (Ve a tu proyecto → Configuración del proyecto → SDK de Firebase → Copia el objeto completo)
+// Nombre: [Tu Nombre Aquí]   Apellido: [Tu Apellido Aquí]   ← agregado como pediste
 const firebaseConfig = {
     apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
     authDomain: "elite-yacht-rentals.firebaseapp.com",
