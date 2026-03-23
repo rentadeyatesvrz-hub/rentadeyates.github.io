@@ -92,16 +92,6 @@
                         </select>
                     </div>
                 </div>
-
-                <!-- Campos nuevos agregados: Nombre y Apellido -->
-                <div>
-                    <label class="block text-sm mb-2">Nombre</label>
-                    <input id="nombre" type="text" class="w-full bg-slate-800 border border-amber-500/30 rounded-2xl p-4 text-white" placeholder="Tu nombre" required>
-                </div>
-                <div>
-                    <label class="block text-sm mb-2">Apellido</label>
-                    <input id="apellido" type="text" class="w-full bg-slate-800 border border-amber-500/30 rounded-2xl p-4 text-white" placeholder="Tu apellido" required>
-                </div>
                 
                 <button onclick="realizarReserva()" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold text-xl py-6 rounded-2xl transition">Confirmar Reserva</button>
             </div>
@@ -127,5 +117,13 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
+
+    <!-- ============================================= -->
+    <!-- BOTÓN FLOTANTE DE WHATSAPP (agregado al final) -->
+    <!-- ============================================= -->
+    <a id="whatsapp-btn" href="#" 
+       style="position:fixed; bottom:20px; right:20px; z-index:9999; background:#25D366; width:65px; height:65px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 15px rgba(37,211,102,0.4); text-decoration:none;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/512px-WhatsApp.svg.png" alt="WhatsApp" style="width:38px;">
+    </a>
 </body>
 </html>
