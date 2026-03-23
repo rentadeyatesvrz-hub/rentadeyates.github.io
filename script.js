@@ -111,7 +111,8 @@ async function realizarReserva() {
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    alert(✅ Reserva confirmada en la nube!\n\( {yate.nombre}\n \){fecha} a las ${hora});
+    // Corrección del alert (sintaxis correcta con template literal)
+    alert(`✅ Reserva confirmada en la nube!\n${yate.nombre}\n${fecha} a las ${hora}`);
     cerrarModal();
 }
 
@@ -135,8 +136,16 @@ function abrirModal() {
     yates.forEach(y => {
         const opt = document.createElement('option');
         opt.value = y.id;
-        opt.textContent = ${y.nombre} - ${y.precio};
+        opt.textContent = `${y.nombre} - ${y.precio}`;   // Corrección: template literal correcto
         select.appendChild(opt);
+    });
+
+    // Inicialización de Flatpickr cada vez que se abre el modal (necesario porque el input se crea dinámicamente)
+    flatpickr("#fecha", {
+        locale: "es",
+        minDate: "today",
+        dateFormat: "d F Y",
+        disableMobile: "true"
     });
 }
 
