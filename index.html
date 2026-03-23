@@ -48,20 +48,22 @@
         </div>
     </section>
 
-    <!-- RESERVAS -->
+        <!-- RESERVAS -->
     <section id="reservas" class="py-24">
         <div class="max-w-7xl mx-auto px-6 text-center">
             <h2 class="text-5xl font-bold mb-4">Reserva en Segundos</h2>
-            <p class="text-xl text-amber-300">Calendario en tiempo real + horarios disponibles 
+            <p class="text-xl text-amber-300 mb-4">Calendario en tiempo real + horarios disponibles 
                 <a href="https://console.firebase.google.com/project/elite-yacht-rentals/firestore/data/~2Freservas" 
                    target="_blank" 
                    class="underline hover:text-amber-300 ml-2">
                    Ver en Firebase Console →
                 </a>
             </p>
-            <!-- Solo se agregó este comentario visible para que quede claro que aquí se conecta con Firebase al abrir el calendario -->
-            <button onclick="abrirModal()" class="mt-8 bg-amber-500 text-black px-12 py-6 text-xl rounded-2xl hover:scale-105 transition">
-                Abrir Calendario de Reservas  <!-- → Abre modal + conecta con Firebase para ver/guardar reservas -->
+            <!-- Línea agregada: nombre y apellido visible -->
+            <p class="text-lg text-amber-400 mb-6">Reservas gestionadas por: [Tu Nombre] [Tu Apellido]</p>
+            
+            <button onclick="abrirModal()" class="mt-4 bg-amber-500 text-black px-12 py-6 text-xl rounded-2xl hover:scale-105 transition">
+                Abrir Calendario de Reservas
             </button>
         </div>
     </section>
