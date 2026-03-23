@@ -1,7 +1,6 @@
 // ==================== FIREBASE CONFIG ====================
 // PASO 3: PEGA AQUÍ TUS DATOS REALES del Firebase Console
 // (Ve a tu proyecto → Configuración del proyecto → SDK de Firebase → Copia el objeto completo)
-// Nombre: [Tu Nombre Aquí]   Apellido: [Tu Apellido Aquí]   ← agregado como pediste
 const firebaseConfig = {
     apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
     authDomain: "elite-yacht-rentals.firebaseapp.com",
@@ -91,6 +90,15 @@ async function realizarReserva() {
         return;
     }
 
+    // Captura y validación de nombre y apellido
+    const nombre = document.getElementById('nombre').value.trim();
+    const apellido = document.getElementById('apellido').value.trim();
+
+    if (!nombre || !apellido) {
+        alert("❌ Por favor ingresa tu nombre y apellido");
+        return;
+    }
+
     const yate = yates.find(y => y.id === yateId);
 
     const snapshot = await db.collection("reservas")
@@ -109,11 +117,12 @@ async function realizarReserva() {
         yateId: yateId,
         fecha: fecha,
         hora: hora,
+        nombre: nombre,
+        apellido: apellido,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    // Corrección del alert (sintaxis correcta con template literal)
-    alert(`✅ Reserva confirmada en la nube!\n${yate.nombre}\n${fecha} a las ${hora}`);
+    alert(`✅ Reserva confirmada en la nube!\n${yate.nombre}\n${fecha} a las ${hora}\nReservado por: ${nombre} ${apellido}`);
     cerrarModal();
 }
 
@@ -137,11 +146,10 @@ function abrirModal() {
     yates.forEach(y => {
         const opt = document.createElement('option');
         opt.value = y.id;
-        opt.textContent = `${y.nombre} - ${y.precio}`;   // Corrección: template literal correcto
+        opt.textContent = `${y.nombre} - ${y.precio}`;
         select.appendChild(opt);
     });
 
-    // Inicialización de Flatpickr cada vez que se abre el modal (necesario porque el input se crea dinámicamente)
     flatpickr("#fecha", {
         locale: "es",
         minDate: "today",
