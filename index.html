@@ -59,7 +59,10 @@
                    Ver en Firebase Console →
                 </a>
             </p>
-            <button onclick="abrirModal()" class="mt-8 bg-amber-500 text-black px-12 py-6 text-xl rounded-2xl hover:scale-105 transition">Abrir Calendario de Reservas</button>
+            <!-- Solo se agregó este comentario visible para que quede claro que aquí se conecta con Firebase al abrir el calendario -->
+            <button onclick="abrirModal()" class="mt-8 bg-amber-500 text-black px-12 py-6 text-xl rounded-2xl hover:scale-105 transition">
+                Abrir Calendario de Reservas  <!-- → Abre modal + conecta con Firebase para ver/guardar reservas -->
+            </button>
         </div>
     </section>
 
@@ -113,29 +116,9 @@
         <p>© 2026 Elite Yacht Rentals • Monterrey, Nuevo León • Hecho con ❤️ para el mar</p>
     </footer>
 
-    <!-- FIREBASE SDK - versiones anteriores (mantengo por compatibilidad si las usabas) -->
+    <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-    <!-- NUEVO CÓDIGO FIREBASE v12.11.0 (agregado exactamente como lo pediste) -->
-    <script type="module">
-      // Import the functions you need from the SDKs you need
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-      // TODO: Add SDKs for Firebase products that you want to use
-      // https://firebase.google.com/docs/web/setup#available-libraries
-      // Your web app's Firebase configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
-        authDomain: "elite-yacht-rentals.firebaseapp.com",
-        projectId: "elite-yacht-rentals",
-        storageBucket: "elite-yacht-rentals.firebasestorage.app",
-        messagingSenderId: "601846230412",
-        appId: "1:601846230412:web:e9b96b3aedfa013617faa9"
-      };
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-    </script>
-
     <script src="script.js"></script>
 </body>
 </html>
