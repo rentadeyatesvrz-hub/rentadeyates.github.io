@@ -16,9 +16,9 @@ const db = firebase.firestore();
 
 // Datos de yates
 const yates = [
-    { id: 1, nombre: "Luxury 80", tipo: "Yate", precio: "MX$28,500/h", capacidad: "12 personas", img: "https://images.unsplash.com/photo-1540946485063-a40da27545f8" },
-    { id: 2, nombre: "Speedster 45", tipo: "Lancha", precio: "MX$12,900/h", capacidad: "8 personas", img: "https://images.unsplash.com/photo-1601581875039-e899893d520c" },
-    { id: 3, nombre: "Ocean King", tipo: "Yate", precio: "MX$45,000/h", capacidad: "20 personas", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d" }
+    { id: 1, nombre: "Lapachanga", tipo: "Lancha", precio: "MX$10,/9h", capacidad: "12 personas", img: "https://images.unsplash.com/photo-1540946485063-a40da27545f8" },
+    { id: 2, nombre: "Gozadera", tipo: "Lancha", precio: "MX$7,500/9h", capacidad: "8 personas", img: "https://images.unsplash.com/photo-1601581875039-e899893d520c" },
+    { id: 3, nombre: "Monky", tipo: "Lancha (buceo)", precio: "MX7,000/5h", capacidad: "10 personas", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d" }
 ];
 
 // Renderizar flota
