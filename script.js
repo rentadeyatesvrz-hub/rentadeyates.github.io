@@ -17,7 +17,7 @@ const db = firebase.firestore();
 // Datos de yates
 const yates = [
     { id: 1, nombre: "Lapachanga", tipo: "Lancha", precio: "MX$10,/9h", capacidad: "12 personas", img: "https://images.unsplash.com/photo-1540946485063-a40da27545f8" },
-    { id: 2, nombre: "Gozadera", tipo: "Lancha", precio: "MX$7,500/9h", capacidad: "8 personas", img: "https://images.unsplash.com/photo-1601581875039-e899893d520c" },
+    { id: 2, nombre: "Gozadera", tipo: "Lancha", precio: "MX$7,500/9h", capacidad: "8 personas", img: "https://images.unsplash.com/photo-1729490322330-fcf63a03df7e?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxjb2xsZWN0aW9uLXBhZ2V8MXxtNmQzRE9TXzlFa3x8ZW58MHx8fHx8" },
     { id: 3, nombre: "Monky", tipo: "Lancha (buceo)", precio: "MX7,000/5h", capacidad: "10 personas", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d" }
 ];
 
