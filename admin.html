@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Elite Yacht Rentals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { background: #0a0a0a; color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        .admin-card { background: #18181b; }
+        table { border-collapse: collapse; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #27272a; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-4xl font-bold text-amber-400">Panel de Administración</h1>
+                <p class="text-zinc-400">Elite Yacht Rentals</p>
+            </div>
+            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-xl text-sm font-medium">Cerrar Sesión</button>
+        </div>
+
+        <!-- Login -->
+        <div id="login-screen" class="max-w-md mx-auto bg-zinc-900 rounded-3xl p-8">
+            <h2 class="text-2xl font-bold mb-6 text-center">Acceso Administrador</h2>
+            <input id="email" type="email" placeholder="Correo administrador" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 mb-4 text-white">
+            <input id="password" type="password" placeholder="Contraseña" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 mb-6 text-white">
+            <button onclick="login()" class="w-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold py-4 rounded-2xl">Ingresar</button>
+        </div>
+
+        <!-- Dashboard Admin -->
+        <div id="dashboard" class="hidden">
+            <h2 class="text-3xl font-bold mb-6">Reservas en Tiempo Real</h2>
+            <div class="admin-card rounded-3xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-zinc-800">
+                        <tr>
+                            <th class="font-medium">Yate</th>
+                            <th class="font-medium">Fecha</th>
+                            <th class="font-medium">Hora</th>
+                            <th class="font-medium">Nombre</th>
+                            <th class="font-medium">Apellido</th>
+                            <th class="font-medium text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservas-table" class="divide-y divide-zinc-700"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === TU CONFIGURACIÓN FIREBASE (igual que en script.js) ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
+            authDomain: "elite-yacht-rentals.firebaseapp.com",
+            projectId: "elite-yacht-rentals",
+            storageBucket: "elite-yacht-rentals.firebasestorage.app",
+            messagingSenderId: "601846230412",
+            appId: "1:601846230412:web:e9b96b3aedfa013617faa9"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Login
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    cargarReservasAdmin();
+                })
+                .catch((error) => alert("Error: " + error.message));
+        }
+
+        // Logout
+        function logout() {
+            auth.signOut().then(() => {
+                location.reload();
+            });
+        }
+
+        // Cargar todas las reservas para admin
+        function cargarReservasAdmin() {
+            const table = document.getElementById('reservas-table');
+            db.collection("reservas").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+                table.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const r = doc.data();
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="font-medium">${r.yate}</td>
+                        <td>${r.fecha}</td>
+                        <td>${r.hora}</td>
+                        <td>${r.nombre || '-'}</td>
+                        <td>${r.apellido || '-'}</td>
+                        <td class="text-center">
+                            <button onclick="agregarAGoogleCalendar('${r.yate}', '${r.fecha}', '${r.hora}', '${r.nombre}', '${r.apellido}')" 
+                                    class="bg-green-500 hover:bg-green-600 text-white text-xs px-4 py-2 rounded-xl">
+                                📅 Agregar a Google Calendar
+                            </button>
+                        </td>
+                    `;
+                    table.appendChild(row);
+                });
+            });
+        }
+
+        // Agregar evento a Google Calendar con alerta
+        function agregarAGoogleCalendar(yate, fecha, hora, nombre, apellido) {
+            // Convertir fecha y hora a formato Google Calendar
+            const fechaISO = fecha.split(' ').reverse().join('-'); // ejemplo: 24 Mar 2026 → 2026-03-24
+            const startTime = `${fechaISO}T${hora}:00`;
+            const endTime = `${fechaISO}T${hora.split(':')[0]}:${parseInt(hora.split(':')[1]) + 2}:00`; // dura 2 horas
+
+            const titulo = `Reserva Elite - ${yate}`;
+            const detalles = `Cliente: ${nombre} ${apellido}\nYate: ${yate}\nHora: ${hora}`;
+
+            const link = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titulo)}&dates=${startTime.replace(/[:-]/g, '')}/${endTime.replace(/[:-]/g, '')}&details=${encodeURIComponent(detalles)}&sf=true`;
+
+            window.open(link, '_blank');
+            alert("✅ Evento abierto en Google Calendar con recordatorio automático");
+        }
+
+        // Protección: si ya está logueado, mostrar dashboard
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                cargarReservasAdmin();
+            }
+        });
+    </script>
+</body>
+</html>
