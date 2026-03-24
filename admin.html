@@ -11,51 +11,70 @@
     <style>
         body { background: #0a0a0a; color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; }
         .admin-card { background: #18181b; }
-        table { border-collapse: collapse; }
+        table { border-collapse: collapse; width: 100%; }
         th, td { padding: 14px; text-align: left; border-bottom: 1px solid #27272a; }
+        
+        /* Mejora responsive para tabla en móviles */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
     </style>
 </head>
 <body class="min-h-screen">
-    <div class="max-w-7xl mx-auto px-6 py-8">
-        <div class="flex justify-between items-center mb-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div>
-                <h1 class="text-4xl font-bold text-amber-400">Panel de Administración</h1>
-                <p class="text-zinc-400">Elite Yacht Rentals</p>
+                <h1 class="text-3xl sm:text-4xl font-bold text-amber-400">Panel de Administración</h1>
+                <p class="text-zinc-400 text-sm sm:text-base">Elite Yacht Rentals</p>
             </div>
-            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-xl text-sm font-medium">Cerrar Sesión</button>
+            <button onclick="logout()" 
+                    class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-xl text-sm font-medium w-full sm:w-auto">
+                Cerrar Sesión
+            </button>
         </div>
 
-        <!-- Login -->
-        <div id="login-screen" class="max-w-md mx-auto bg-zinc-900 rounded-3xl p-8">
+        <!-- Login Screen -->
+        <div id="login-screen" class="max-w-md mx-auto bg-zinc-900 rounded-3xl p-6 sm:p-8">
             <h2 class="text-2xl font-bold mb-6 text-center">Acceso Administrador</h2>
-            <input id="email" type="email" placeholder="Correo administrador" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 mb-4 text-white">
-            <input id="password" type="password" placeholder="Contraseña" class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 mb-6 text-white">
-            <button onclick="login()" class="w-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold py-4 rounded-2xl">Ingresar</button>
+            <input id="email" type="email" placeholder="Correo administrador" 
+                   class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 mb-4 text-white text-base">
+            <input id="password" type="password" placeholder="Contraseña" 
+                   class="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-5 py-4 mb-6 text-white text-base">
+            <button onclick="login()" 
+                    class="w-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold py-4 rounded-2xl text-base">
+                Ingresar
+            </button>
         </div>
 
-        <!-- Dashboard Admin -->
+        <!-- Dashboard -->
         <div id="dashboard" class="hidden">
-            <h2 class="text-3xl font-bold mb-6">Reservas en Tiempo Real</h2>
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6">Reservas en Tiempo Real</h2>
+            
             <div class="admin-card rounded-3xl overflow-hidden">
-                <table class="w-full text-sm">
-                    <thead class="bg-zinc-800">
-                        <tr>
-                            <th class="font-medium">Yate</th>
-                            <th class="font-medium">Fecha</th>
-                            <th class="font-medium">Hora</th>
-                            <th class="font-medium">Nombre</th>
-                            <th class="font-medium">Apellido</th>
-                            <th class="font-medium text-center">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reservas-table" class="divide-y divide-zinc-700"></tbody>
-                </table>
+                <div class="table-container">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-zinc-800 sticky top-0">
+                            <tr>
+                                <th class="font-medium whitespace-nowrap">Yate</th>
+                                <th class="font-medium whitespace-nowrap">Fecha</th>
+                                <th class="font-medium whitespace-nowrap">Hora</th>
+                                <th class="font-medium whitespace-nowrap">Nombre</th>
+                                <th class="font-medium whitespace-nowrap">Apellido</th>
+                                <th class="font-medium text-center whitespace-nowrap">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservas-table" class="divide-y divide-zinc-700"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // === TU CONFIGURACIÓN FIREBASE (igual que en script.js) ===
+        // === TU CONFIGURACIÓN FIREBASE (sin cambios) ===
         const firebaseConfig = {
             apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
             authDomain: "elite-yacht-rentals.firebaseapp.com",
@@ -69,7 +88,6 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // Login
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -83,14 +101,10 @@
                 .catch((error) => alert("Error: " + error.message));
         }
 
-        // Logout
         function logout() {
-            auth.signOut().then(() => {
-                location.reload();
-            });
+            auth.signOut().then(() => location.reload());
         }
 
-        // Cargar todas las reservas para admin
         function cargarReservasAdmin() {
             const table = document.getElementById('reservas-table');
             db.collection("reservas").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
@@ -98,16 +112,17 @@
                 snapshot.forEach(doc => {
                     const r = doc.data();
                     const row = document.createElement('tr');
+                    row.className = "hover:bg-zinc-800 transition";
                     row.innerHTML = `
-                        <td class="font-medium">${r.yate}</td>
-                        <td>${r.fecha}</td>
-                        <td>${r.hora}</td>
-                        <td>${r.nombre || '-'}</td>
-                        <td>${r.apellido || '-'}</td>
-                        <td class="text-center">
-                            <button onclick="agregarAGoogleCalendar('${r.yate}', '${r.fecha}', '${r.hora}', '${r.nombre}', '${r.apellido}')" 
-                                    class="bg-green-500 hover:bg-green-600 text-white text-xs px-4 py-2 rounded-xl">
-                                📅 Agregar a Google Calendar
+                        <td class="font-medium py-4">${r.yate}</td>
+                        <td class="py-4">${r.fecha}</td>
+                        <td class="py-4">${r.hora}</td>
+                        <td class="py-4">${r.nombre || '-'}</td>
+                        <td class="py-4">${r.apellido || '-'}</td>
+                        <td class="py-4 text-center">
+                            <button onclick="agregarAGoogleCalendar('${r.yate}', '${r.fecha}', '${r.hora}', '${r.nombre || ''}', '${r.apellido || ''}')" 
+                                    class="bg-green-600 hover:bg-green-500 text-white text-xs px-5 py-2.5 rounded-xl transition">
+                                📅 Google Calendar
                             </button>
                         </td>
                     `;
@@ -116,12 +131,10 @@
             });
         }
 
-        // Agregar evento a Google Calendar con alerta
         function agregarAGoogleCalendar(yate, fecha, hora, nombre, apellido) {
-            // Convertir fecha y hora a formato Google Calendar
-            const fechaISO = fecha.split(' ').reverse().join('-'); // ejemplo: 24 Mar 2026 → 2026-03-24
+            const fechaISO = fecha.split(' ').reverse().join('-');
             const startTime = `${fechaISO}T${hora}:00`;
-            const endTime = `${fechaISO}T${hora.split(':')[0]}:${parseInt(hora.split(':')[1]) + 2}:00`; // dura 2 horas
+            const endTime = `${fechaISO}T${hora.split(':')[0]}:${parseInt(hora.split(':')[1]) + 2}:00`;
 
             const titulo = `Reserva Elite - ${yate}`;
             const detalles = `Cliente: ${nombre} ${apellido}\nYate: ${yate}\nHora: ${hora}`;
@@ -129,10 +142,9 @@
             const link = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(titulo)}&dates=${startTime.replace(/[:-]/g, '')}/${endTime.replace(/[:-]/g, '')}&details=${encodeURIComponent(detalles)}&sf=true`;
 
             window.open(link, '_blank');
-            alert("✅ Evento abierto en Google Calendar con recordatorio automático");
         }
 
-        // Protección: si ya está logueado, mostrar dashboard
+        // Auto-login si ya está autenticado
         auth.onAuthStateChanged(user => {
             if (user) {
                 document.getElementById('login-screen').classList.add('hidden');
