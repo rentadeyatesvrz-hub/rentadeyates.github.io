@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // WHATSAPP MENU (agregado al final - sin tocar nada anterior)
 // =============================================
 function abrirWhatsApp() {
-    const phone = "522295202785"; // ← CAMBIA por tu número real (con 52 al inicio)
+    const phone = "5212295202785"; // ← CAMBIA por tu número real (con 52 al inicio)
     
     const mensaje = `¡Hola! Gracias por visitarnos 👋
 
