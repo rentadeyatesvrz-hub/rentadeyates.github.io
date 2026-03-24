@@ -1,4 +1,4 @@
-/* Estilos elite adicionales */
+/* Estilos elite adicionales - Dark Pro */
 body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
 }
@@ -18,9 +18,21 @@ body {
 
 .card-yate {
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #18181b;
 }
 
 .card-yate:hover {
     transform: translateY(-12px) scale(1.03);
-    box-shadow: 0 25px 50px -12px rgb(245 158 11 / 0.3);
+    box-shadow: 0 25px 50px -12px rgb(245 158 11 / 0.4);
+}
+
+/* Ajustes adicionales para Dark Pro */
+select, input {
+    background-color: #27272a;
+    border-color: #3f3f46;
+}
+
+select:focus, input:focus {
+    border-color: #fbbf24;
+    outline: none;
 }
