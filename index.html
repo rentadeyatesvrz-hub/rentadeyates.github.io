@@ -10,79 +10,79 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-zinc-950 text-white font-sans">
+<body class="bg-slate-950 text-white font-sans">
     <!-- NAVBAR -->
-    <nav class="bg-zinc-900/90 backdrop-blur-lg fixed w-full z-50 border-b border-amber-400/30">
+    <nav class="bg-slate-900/80 backdrop-blur-lg fixed w-full z-50 border-b border-amber-500/20">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
                 <span class="text-3xl">⛵</span>
-                <h1 class="text-2xl font-bold tracking-widest text-amber-300">ELITE</h1>
+                <h1 class="text-2xl font-bold tracking-widest text-amber-400">ELITE</h1>
             </div>
             <ul class="hidden md:flex gap-8 text-sm font-medium">
-                <li><a href="#flota" class="hover:text-amber-300 transition">Nuestra Flota</a></li>
-                <li><a href="#reservas" class="hover:text-amber-300 transition">Reservar</a></li>
-                <li><a href="#contacto" class="hover:text-amber-300 transition">Contacto</a></li>
+                <li><a href="#flota" class="hover:text-amber-400 transition">Nuestra Flota</a></li>
+                <li><a href="#reservas" class="hover:text-amber-400 transition">Reservar</a></li>
+                <li><a href="#contacto" class="hover:text-amber-400 transition">Contacto</a></li>
             </ul>
-            <button onclick="abrirModal()" class="bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold px-8 py-3 rounded-full transition">Reservar Ahora</button>
+            <button onclick="abrirModal()" class="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-8 py-3 rounded-full transition">Reservar Ahora</button>
         </div>
     </nav>
 
     <!-- HERO -->
     <section class="h-screen bg-cover bg-center relative" style="background-image: url('https://images.unsplash.com/photo-1540946485063-a40da27545f8')">
-        <div class="absolute inset-0 bg-gradient-to-b from-black/60 to-zinc-950/90"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/40 to-black/80"></div>
         <div class="absolute inset-0 flex items-center justify-center text-center px-6">
             <div class="max-w-4xl">
-                <h2 class="text-6xl md:text-7xl font-bold tracking-tighter mb-4">Yates y Lanchas<br>de Lujo en Veracruz</h2>
-                <p class="text-2xl text-amber-200 mb-8">Experiencia elite en el mar</p>
-                <button onclick="abrirModal()" class="bg-amber-400 text-zinc-950 text-xl font-bold px-12 py-6 rounded-2xl hover:scale-105 transition">Reservar tu experiencia</button>
+                <h2 class="text-6xl md:text-7xl font-bold tracking-tighter mb-4">Yates y Lanchas<br>de Lujo en México</h2>
+                <p class="text-2xl text-amber-300 mb-8">Experiencia elite en el mar</p>
+                <button onclick="abrirModal()" class="bg-amber-500 text-black text-xl font-bold px-12 py-6 rounded-2xl hover:scale-105 transition">Reservar tu experiencia</button>
             </div>
         </div>
     </section>
 
     <!-- FLOTA -->
-    <section id="flota" class="py-24 bg-zinc-900">
+    <section id="flota" class="py-24 bg-slate-900">
         <div class="max-w-7xl mx-auto px-6">
-            <h2 class="text-5xl font-bold text-center mb-4 text-white">Nuestra Flota Elite</h2>
-            <p class="text-center text-amber-200 mb-12">Elige tu yate o lancha de lujo</p>
+            <h2 class="text-5xl font-bold text-center mb-4">Nuestra Flota Elite</h2>
+            <p class="text-center text-amber-300 mb-12">Elige tu yate o lancha de lujo</p>
             <div id="flota-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
         </div>
     </section>
 
     <!-- RESERVAS -->
-    <section id="reservas" class="py-24 bg-zinc-950">
+    <section id="reservas" class="py-24">
         <div class="max-w-7xl mx-auto px-6 text-center">
             <h2 class="text-5xl font-bold mb-4">Reserva en Segundos</h2>
-            <p class="text-xl text-amber-200">Calendario en tiempo real + horarios disponibles 
+            <p class="text-xl text-amber-300">Calendario en tiempo real + horarios disponibles 
                 <a href="https://console.firebase.google.com/project/elite-yacht-rentals/firestore/data/~2Freservas" 
                    target="_blank" 
                    class="underline hover:text-amber-300 ml-2">
                    Ver en Firebase Console →
                 </a>
             </p>
-            <button onclick="abrirModal()" class="mt-8 bg-amber-400 text-zinc-950 px-12 py-6 text-xl rounded-2xl hover:scale-105 transition">Abrir Calendario de Reservas</button>
+            <button onclick="abrirModal()" class="mt-8 bg-amber-500 text-black px-12 py-6 text-xl rounded-2xl hover:scale-105 transition">Abrir Calendario de Reservas</button>
         </div>
     </section>
 
     <!-- MODAL RESERVA -->
     <div id="modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[100]">
-        <div class="bg-zinc-900 rounded-3xl max-w-2xl w-full mx-4 p-8 relative">
-            <button onclick="cerrarModal()" class="absolute top-6 right-6 text-3xl text-amber-300">✕</button>
+        <div class="bg-slate-900 rounded-3xl max-w-2xl w-full mx-4 p-8 relative">
+            <button onclick="cerrarModal()" class="absolute top-6 right-6 text-3xl text-amber-400">✕</button>
             <h3 class="text-4xl font-bold mb-8">Haz tu Reserva</h3>
             
             <div class="space-y-6">
                 <div>
                     <label class="block text-sm mb-2">Selecciona tu embarcación</label>
-                    <select id="select-yate" class="w-full bg-zinc-800 border border-amber-400/30 rounded-2xl p-4 text-white"></select>
+                    <select id="select-yate" class="w-full bg-slate-800 border border-amber-500/30 rounded-2xl p-4 text-white"></select>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm mb-2">Fecha</label>
-                        <input id="fecha" type="text" class="w-full bg-zinc-800 border border-amber-400/30 rounded-2xl p-4 text-white flatpickr-input" placeholder="Selecciona fecha">
+                        <input id="fecha" type="text" class="w-full bg-slate-800 border border-amber-500/30 rounded-2xl p-4 text-white flatpickr-input" placeholder="Selecciona fecha">
                     </div>
                     <div>
                         <label class="block text-sm mb-2">Hora</label>
-                        <select id="hora" class="w-full bg-zinc-800 border border-amber-400/30 rounded-2xl p-4 text-white">
+                        <select id="hora" class="w-full bg-slate-800 border border-amber-500/30 rounded-2xl p-4 text-white">
                             <option value="">Selecciona hora</option>
                             <option value="09:00">09:00</option>
                             <option value="11:00">11:00</option>
@@ -93,11 +93,11 @@
                     </div>
                 </div>
                 
-                <button onclick="realizarReserva()" class="w-full bg-amber-400 hover:bg-amber-300 text-zinc-950 font-bold text-xl py-6 rounded-2xl transition">Confirmar Reserva</button>
+                <button onclick="realizarReserva()" class="w-full bg-amber-500 hover:bg-amber-600 text-black font-bold text-xl py-6 rounded-2xl transition">Confirmar Reserva</button>
             </div>
             
-            <div id="reservas-activas" class="mt-10 pt-6 border-t border-amber-400/20">
-                <p class="text-sm text-amber-300 mb-4">Tus reservas activas: 
+            <div id="reservas-activas" class="mt-10 pt-6 border-t border-amber-500/20">
+                <p class="text-sm text-amber-400 mb-4">Tus reservas activas: 
                     <a href="https://console.firebase.google.com/project/elite-yacht-rentals/firestore/data/~2Freservas" 
                        target="_blank" 
                        class="underline hover:text-amber-300 ml-2">
@@ -109,13 +109,60 @@
         </div>
     </div>
 
-    <footer class="bg-zinc-950 py-12 text-center text-sm">
-        <p>© 2026 Elite Yacht Rentals • Veracruz • Hecho con 💛💙 para el mar</p>
+    <footer class="bg-slate-950 py-12 text-center text-sm">
+        <p>© 2026 Elite Yacht Rentals • Monterrey, Nuevo León • Hecho con ❤️ para el mar</p>
     </footer>
 
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
+
+    <!-- ==================== NUEVA FUNCIONALIDAD: NOTIFICACIONES PUSH (FCM) ==================== -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+    <script>
+        // Configuración Firebase (igual que en script.js)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
+            authDomain: "elite-yacht-rentals.firebaseapp.com",
+            projectId: "elite-yacht-rentals",
+            storageBucket: "elite-yacht-rentals.firebasestorage.app",
+            messagingSenderId: "601846230412",
+            appId: "1:601846230412:web:e9b96b3aedfa013617faa9"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+
+        // Función para solicitar permiso de notificaciones push (iOS + Android)
+        async function solicitarPermisoPush() {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === "granted") {
+                    const token = await messaging.getToken();
+                    console.log("✅ Token de notificación push generado:", token);
+                    // Aquí puedes guardar el token en Firestore si deseas enviar notificaciones personalizadas
+                } else {
+                    console.log("Usuario rechazó las notificaciones push");
+                }
+            } catch (error) {
+                console.error("Error al solicitar permiso de notificaciones:", error);
+            }
+        }
+
+        // Solicitar permiso automáticamente al cargar la página
+        window.addEventListener('load', () => {
+            solicitarPermisoPush();
+        });
+
+        // Recibir notificaciones cuando la página está abierta (foreground)
+        messaging.onMessage((payload) => {
+            console.log("Notificación recibida en primer plano:", payload);
+            new Notification(payload.notification.title, {
+                body: payload.notification.body,
+                icon: "https://images.unsplash.com/photo-1540946485063-a40da27545f8"
+            });
+        });
+    </script>
 </body>
 </html>
