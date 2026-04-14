@@ -32,7 +32,7 @@
         <div class="absolute inset-0 bg-gradient-to-b from-black/40 to-black/80"></div>
         <div class="absolute inset-0 flex items-center justify-center text-center px-6">
             <div class="max-w-4xl">
-                <h2 class="text-6xl md:text-7xl font-bold tracking-tighter mb-4">Yates y Lanchas<br>de Lujo en México</h2>
+                <h2 class="text-6xl md:text-7xl font-bold tracking-tighter mb-4">Yates y Lanchas<br>de Lujo en Veracruz</h2>
                 <p class="text-2xl text-amber-300 mb-8">Experiencia elite en el mar</p>
                 <button onclick="abrirModal()" class="bg-amber-500 text-black text-xl font-bold px-12 py-6 rounded-2xl hover:scale-105 transition">Reservar tu experiencia</button>
             </div>
@@ -53,7 +53,7 @@
         <div class="max-w-7xl mx-auto px-6 text-center">
             <h2 class="text-5xl font-bold mb-4">Reserva en Segundos</h2>
             <p class="text-xl text-amber-300">Calendario en tiempo real + horarios disponibles 
-                <a href="https://console.firebase.google.com/project/elite-yacht-rentals/firestore/data/\~2Freservas" 
+               <!--  <a href="https://console.firebase.google.com/project/elite-yacht-rentals/firestore/data/~2Freservas" -->
                    target="_blank" 
                    class="underline hover:text-amber-300 ml-2">
                    Ver en Firebase Console →
@@ -98,7 +98,7 @@
             
             <div id="reservas-activas" class="mt-10 pt-6 border-t border-amber-500/20">
                 <p class="text-sm text-amber-400 mb-4">Tus reservas activas: 
-                    <a href="https://console.firebase.google.com/project/elite-yacht-rentals/firestore/data/\~2Freservas" 
+                   <!-- <a href="https://console.firebase.google.com/project/elite-yacht-rentals/firestore/data/~2Freservas" -->
                        target="_blank" 
                        class="underline hover:text-amber-300 ml-2">
                        Ver en Firebase Console →
@@ -110,12 +110,58 @@
     </div>
 
     <footer class="bg-slate-950 py-12 text-center text-sm">
-        <p>© 2026 Elite Yacht Rentals • Monterrey, Nuevo León • Hecho con ❤️ para el mar</p>
+        <p>© 2026 Elite Yacht Rentals • Veracruz, • Hecho con 💛💙 para el mar</p>
     </footer>
 
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
+
+    <!-- ============================================= -->
+    <!-- BOTÓN FLOTANTE DE WHATSAPP - CORREGIDO -->
+    <!-- ============================================= -->
+    <a href="#" id="whatsapp-btn"
+       style="position:fixed; bottom:25px; right:25px; z-index:9999; background:#25D366; width:65px; height:65px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 20px rgba(37,211,102,0.5); text-decoration:none;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/512px-WhatsApp.svg.png" alt="WhatsApp" style="width:38px;">
+    </a>
+
+    <script>
+        // Función WhatsApp corregida y lista para usar
+        function abrirWhatsApp() {
+            const phone = "5212295202785"; // ← CAMBIA ESTE NÚMERO por tu número real (con 52 al inicio)
+
+            const mensaje = `¡Hola! Gracias por visitarnos 👋
+
+Tenemos el siguiente menú de opciones:
+
+1. Renta de yates y Lanchas
+2. Venta de yates y Lanchas
+3. Venta de Remolques o Mantenimiento
+4. Hablar con un Asesor
+
+Responde con el número de la opción que deseas.
+
+Enlaces directos:
+1. Renta → https://bit.ly/renta-elite
+2. Venta → https://bit.ly/venta-yates
+3. Remolques/Mantenimiento → https://bit.ly/remolques
+4. Asesor → https://bit.ly/asesor-elite`;
+
+            const encoded = encodeURIComponent(mensaje);
+            window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
+        }
+
+        // Asignar evento al botón (corregido para que funcione siempre)
+        document.addEventListener('DOMContentLoaded', function() {
+            const whatsappBtn = document.getElementById('whatsapp-btn');
+            if (whatsappBtn) {
+                whatsappBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    abrirWhatsApp();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
