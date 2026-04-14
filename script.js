@@ -16,9 +16,9 @@ const db = firebase.firestore();
 
 // Datos de yates
 const yates = [
-    { id: 1, nombre: "Lapachanga", tipo: "Lancha", precio: "MX$10,/9h", capacidad: "12 personas", img: "https://images.unsplash.com/photo-1540946485063-a40da27545f8" },
-    { id: 2, nombre: "Gozadera", tipo: "Lancha", precio: "MX$7,500/9h", capacidad: "8 personas", img: "https://images.unsplash.com/photo-1729490322330-fcf63a03df7e?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxjb2xsZWN0aW9uLXBhZ2V8MXxtNmQzRE9TXzlFa3x8ZW58MHx8fHx8" },
-    { id: 3, nombre: "Monky", tipo: "Lancha (buceo)", precio: "MX7,000/5h", capacidad: "10 personas", img: "https://images.unsplash.com/photo-1746306573086-90b46480a2f7?w=400&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxjb2xsZWN0aW9uLXBhZ2V8MXxtNmQzRE9TXzlFa3x8ZW58MHx8fHx8" }
+    { id: 1, nombre: "La Gozadera 80", tipo: "Yate", precio: "MX$28,500/h", capacidad: "12 personas", img: "https://images.unsplash.com/photo-1540946485063-a40da27545f8" },
+    { id: 2, nombre: "La Pachanga 45", tipo: "Lancha", precio: "MX$12,900/h", capacidad: "8 personas", img: "https://images.unsplash.com/photo-1601581875039-e899893d520c" },
+    { id: 3, nombre: "Monky", tipo: "Yate", precio: "MX$45,000/h", capacidad: "20 personas", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d" }
 ];
 
 // Renderizar flota
@@ -111,6 +111,7 @@ async function realizarReserva() {
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 
+    // Corrección del alert (sintaxis correcta con template literal)
     alert(`✅ Reserva confirmada en la nube!\n${yate.nombre}\n${fecha} a las ${hora}`);
     cerrarModal();
 }
@@ -131,14 +132,17 @@ function abrirModal() {
     document.getElementById('modal').classList.add('flex');
     
     const select = document.getElementById('select-yate');
-    select.innerHTML = '<option value="">Elige un yate...</option>';
+    
+    // Llenar el selector de yates (esto es lo único que se agregó/corregió)
+    select.innerHTML = '<option value="">Elige un yate o lancha...</option>';
     yates.forEach(y => {
         const opt = document.createElement('option');
         opt.value = y.id;
-        opt.textContent = `${y.nombre} - ${y.precio}`;
+        opt.textContent = `${y.nombre} - ${y.tipo} - ${y.precio}`;
         select.appendChild(opt);
     });
 
+    // Inicialización de Flatpickr cada vez que se abre el modal
     flatpickr("#fecha", {
         locale: "es",
         minDate: "today",
@@ -163,37 +167,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     cargarReservas();
-});
-
-// =============================================
-// WHATSAPP MENU (agregado al final - sin tocar nada anterior)
-// =============================================
-function abrirWhatsApp() {
-    const phone = "5212295202785"; // ← CAMBIA por tu número real (con 52 al inicio)
-    
-    const mensaje = `¡Hola! Gracias por visitarnos 👋
-
-Tenemos el siguiente menú de opciones:
-
-1. Renta de yates y Lanchas
-2. Venta de yates y Lanchas
-3. Venta de Remolques o Mantenimiento
-4. Hablar con un Asesor
-
-Responde con el número de la opción que deseas.
-
-Enlaces directos (con Bitly para geolocalización y seguimiento):
-1. https://bit.ly/renta-elite
-2. https://bit.ly/venta-yates
-3. https://bit.ly/remolques-mantenimiento
-4. https://bit.ly/asesor-elite`;
-
-    const encoded = encodeURIComponent(mensaje);
-    window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
-}
-
-// Activar el botón flotante
-document.getElementById('whatsapp-btn').addEventListener('click', function(e) {
-    e.preventDefault();
-    abrirWhatsApp();
 });
