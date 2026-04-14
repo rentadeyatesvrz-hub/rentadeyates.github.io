@@ -16,9 +16,9 @@ const db = firebase.firestore();
 
 // Datos de yates
 const yates = [
-    { id: 1, nombre: "La Gozadera 80", tipo: "Yate", precio: "MX$28,500/h", capacidad: "12 personas", img: "https://images.unsplash.com/photo-1540946485063-a40da27545f8" },
-    { id: 2, nombre: "La Pachanga 45", tipo: "Lancha", precio: "MX$12,900/h", capacidad: "8 personas", img: "https://images.unsplash.com/photo-1601581875039-e899893d520c" },
-    { id: 3, nombre: "Monky", tipo: "Yate", precio: "MX$45,000/h", capacidad: "20 personas", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d" }
+    { id: 1, nombre: "Luxury 80", tipo: "Yate", precio: "MX$28,500/h", capacidad: "12 personas", img: "https://images.unsplash.com/photo-1540946485063-a40da27545f8" },
+    { id: 2, nombre: "Speedster 45", tipo: "Lancha", precio: "MX$12,900/h", capacidad: "8 personas", img: "https://images.unsplash.com/photo-1601581875039-e899893d520c" },
+    { id: 3, nombre: "Ocean King", tipo: "Yate", precio: "MX$45,000/h", capacidad: "20 personas", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d" }
 ];
 
 // Renderizar flota
@@ -111,6 +111,7 @@ async function realizarReserva() {
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 
+    // Corrección del alert (sintaxis correcta con template literal)
     alert(`✅ Reserva confirmada en la nube!\n${yate.nombre}\n${fecha} a las ${hora}`);
     cerrarModal();
 }
@@ -131,18 +132,15 @@ function abrirModal() {
     document.getElementById('modal').classList.add('flex');
     
     const select = document.getElementById('select-yate');
-    
-    // Limpiar y llenar correctamente el selector
-    select.innerHTML = '<option value="">Elige un yate o lancha...</option>';
-    
+    select.innerHTML = '<option value="">Elige un yate...</option>';
     yates.forEach(y => {
         const opt = document.createElement('option');
         opt.value = y.id;
-        opt.textContent = `${y.nombre} - ${y.tipo} - ${y.precio}`;
+        opt.textContent = `${y.nombre} - ${y.precio}`;   // Corrección: template literal correcto
         select.appendChild(opt);
     });
 
-    // Inicializar Flatpickr cada vez que se abre el modal
+    // Inicialización de Flatpickr cada vez que se abre el modal (necesario porque el input se crea dinámicamente)
     flatpickr("#fecha", {
         locale: "es",
         minDate: "today",
