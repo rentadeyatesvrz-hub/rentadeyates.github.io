@@ -16,10 +16,10 @@ const db = firebase.firestore();
 
 // Datos de yates
 const yates = [
-    { id: 1, nombre: "ok 80", tipo: "Yate", precio: "MX$28,500/h", capacidad: "12 personas", img: "https://images.unsplash.com/photo-1540946485063-a40da27545f8" },
+    { id: 1, nombre: "La Gozadera 80", tipo: "Yate", precio: "MX$28,500/h", capacidad: "12 personas", img: "https://unsplash.com/es/fotos/WU0efbwJBes" },
     { id: 2, nombre: "La Pachanga 45", tipo: "Lancha", precio: "MX$12,900/h", capacidad: "8 personas", img: "https://images.unsplash.com/photo-1601581875039-e899893d520c" },
     { id: 3, nombre: "Monky", tipo: "Yate", precio: "MX$45,000/h", capacidad: "20 personas", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d" },
-    { id: 4, nombre: "Percales", tipo: "Lancha", precio: "MX$12,900/h", capacidad: "8 personas", img: "Percales_5MP_web.jpg" } 
+    { id: 4, nombre: "Percales", tipo: "Lancha", precio: "MX$12,900/h", capacidad: "8 personas", img: "https://unsplash.com/es/fotos/32quKhrOH2s" } 
 ];
 
 // Renderizar flota
