@@ -35,7 +35,7 @@ function renderFlota() {
             : (y.incluye || '');
 
         const incluyeHTML = incluyeContenido
-            ? `<p class="text-sm text-slate-300 mt-3"><span class="text-amber-400 font-semibold">Incluye:</span> ${incluyeContenido}</p>`
+            ? `<p class="text-xs sm:text-sm text-slate-300 mt-3 leading-relaxed break-words"><span class="text-amber-400 font-semibold">Incluye:</span> ${incluyeContenido}</p>`
             : '';
 
         card.innerHTML = `
