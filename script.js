@@ -331,7 +331,7 @@ function getFeatureDefinitions() {
             chip: 'Reserva directa',
             cardKicker: 'Reserva',
             cardTitle: 'Flujo activo',
-            cardCopy: 'Modal, selector, fecha, hora y confirmación funcionando.'
+            cardCopy: 'Selecciona Yate o Lancha, fecha, hora y confirma en segundos.'
         },
         {
             key: 'availability',
