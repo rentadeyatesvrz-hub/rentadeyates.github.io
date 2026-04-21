@@ -34,16 +34,6 @@ let disponiblesActivos = [];
 let disponiblesCarouselIndex = 0;
 let disponiblesCarouselTimer = null;
 
-function functionExists(name) {
-    return typeof window[name] === 'function';
-}
-
-function getResponsiveModeLabel() {
-    if (window.matchMedia('(max-width: 640px)').matches) return 'Móvil';
-    if (window.matchMedia('(max-width: 1024px)').matches) return 'Tablet';
-    return 'Web';
-}
-
 function getReservationContainers() {
     return [
         document.getElementById('lista-reservas-modal'),
@@ -321,118 +311,25 @@ function renderDisponiblesHoy() {
     syncDisponiblesVisual(disponiblesHoy);
 }
 
-function getFeatureDefinitions() {
-    return [
-        {
-            key: 'quickReserve',
-            enabled: functionExists('abrirModal') && functionExists('realizarReserva'),
-            heroTitle: 'Reserva premium en segundos',
-            badge: 'Disponible hoy',
-            chip: 'Reserva directa',
-            cardKicker: 'Reserva',
-            cardTitle: 'Flujo activo',
-            cardCopy: 'Selecciona Yate o Lancha, fecha, hora y confirma en segundos.'
-        },
-        {
-            key: 'availability',
-            enabled: functionExists('actualizarDisponibilidad'),
-            chip: 'Horarios bloqueados',
-            cardKicker: 'Disponibilidad',
-            cardTitle: 'Tiempo real',
-            cardCopy: 'Los horarios ocupados se marcan y se bloquean automáticamente.'
-        },
-        {
-            key: 'realtime',
-            enabled: !!db && functionExists('cargarReservas'),
-            chip: 'Firestore live',
-            cardKicker: 'Sync',
-            cardTitle: syncMode,
-            cardCopy: 'Las reservas activas se sincronizan y se muestran en vivo.'
-        },
-        {
-            key: 'responsive',
-            enabled: typeof window.matchMedia === 'function',
-            chip: `Vista ${getResponsiveModeLabel()}`,
-            cardKicker: 'Responsive',
-            cardTitle: 'Web + móvil',
-            cardCopy: 'La lista de reservas ahora también se ve en móvil con scroll propio.'
-        }
-    ].filter(feature => feature.enabled);
-}
-
-function renderFeatureExperience() {
-    const features = getFeatureDefinitions();
-    const heroCards = document.getElementById('hero-feature-cards');
-    const heroChips = document.getElementById('hero-feature-chips');
-    const heroMiniCards = document.getElementById('hero-feature-mini-cards');
-    const heroMicroCards = document.getElementById('hero-feature-microcards');
+function renderHeroPanel() {
     const heroPanel = document.getElementById('hero-feature-panel');
-    const reservationCards = document.getElementById('reservas-feature-cards');
     const heroTitle = document.getElementById('hero-panel-title');
     const heroBadge = document.getElementById('hero-panel-badge');
 
-    if (!features.length) {
-        heroCards && (heroCards.innerHTML = '');
-        reservationCards && (reservationCards.innerHTML = '');
-        if (heroPanel) heroPanel.style.display = 'none';
-        return;
-    }
-
     if (heroPanel) heroPanel.style.display = '';
+    if (heroTitle) heroTitle.textContent = 'Disponibilidad en tiempo real';
 
-    const primaryFeature = features.find(feature => feature.key === 'quickReserve') || features[0];
-    if (heroTitle) heroTitle.textContent = primaryFeature.heroTitle || primaryFeature.cardTitle;
-    if (heroBadge) heroBadge.textContent = primaryFeature.badge || 'Activo';
-
-    const cardFeatures = features.slice(0, 3);
-    if (heroCards) {
-        heroCards.innerHTML = cardFeatures.map(feature => `
-            <div class="stat-card">
-                <p class="stat-kicker">${escapeHtml(feature.cardKicker)}</p>
-                <p class="stat-title">${escapeHtml(feature.cardTitle)}</p>
-                <p class="stat-copy">${escapeHtml(feature.cardCopy)}</p>
-            </div>
-        `).join('');
-    }
-
-    if (reservationCards) {
-        reservationCards.innerHTML = cardFeatures.map(feature => `
-            <div class="info-tile">
-                <p class="info-tile-label">${escapeHtml(feature.cardKicker)}</p>
-                <p class="info-tile-copy">${escapeHtml(feature.cardCopy)}</p>
-            </div>
-        `).join('');
-    }
-
-    if (heroChips) {
-        heroChips.innerHTML = features.slice(0, 4).map(feature => `<span class="preview-chip">${escapeHtml(feature.chip)}</span>`).join('');
-    }
-
-    if (heroMiniCards) {
-        heroMiniCards.innerHTML = features.slice(0, 3).map(feature => `
-            <div class="preview-card preview-card--feature">
-                <span class="preview-card-label">${escapeHtml(feature.cardKicker)}</span>
-                <strong class="preview-card-value">${escapeHtml(feature.cardTitle)}</strong>
-            </div>
-        `).join('');
-    }
-
-    const horasDisponibles = getHorasDisponiblesSeleccionadas();
-    if (heroMicroCards) {
-        heroMicroCards.innerHTML = `
-            <div class="micro-card">
-                <p class="micro-label">Sync</p>
-                <p class="micro-value">${escapeHtml(syncMode)}</p>
-            </div>
-            <div class="micro-card">
-                <p class="micro-label">Vista</p>
-                <p class="micro-value">${escapeHtml(getResponsiveModeLabel())}</p>
-            </div>
-            <div class="micro-card">
-                <p class="micro-label">Slots</p>
-                <p class="micro-value">${String(horasDisponibles)}</p>
-            </div>
-        `;
+    if (heroBadge) {
+        if (syncMode === 'Error') {
+            heroBadge.textContent = 'Sync no disponible';
+        } else if (!reservasSincronizadas) {
+            heroBadge.textContent = 'Consultando hoy';
+        } else {
+            const disponiblesHoy = getYatesDisponiblesHoy().length;
+            heroBadge.textContent = disponiblesHoy > 0
+                ? `${disponiblesHoy} disponible${disponiblesHoy === 1 ? '' : 's'} hoy`
+                : 'Sin disponibilidad hoy';
+        }
     }
 
     renderDisponiblesHoy();
@@ -547,7 +444,7 @@ function actualizarResumenReservas() {
     const reservasHoy = reservas.filter(r => String(r.fecha || '').toLowerCase() === hoy).length;
     setText('reservas-hoy', String(reservasHoy));
     setText('sync-status', syncMode);
-    renderFeatureExperience();
+    renderHeroPanel();
 }
 
 // Cargar reservas en tiempo real
@@ -576,7 +473,7 @@ function cargarReservas() {
         syncMode = 'Error';
         reservasSincronizadas = false;
         setText('sync-status', syncMode);
-        renderFeatureExperience();
+        renderHeroPanel();
         showToast('No se pudieron sincronizar las reservas en este momento.', 'error');
     });
 }
@@ -624,7 +521,7 @@ function actualizarDisponibilidad() {
     const availability = document.getElementById('availability-status');
 
     if (!horaSelect || !availability) {
-        renderFeatureExperience();
+        renderHeroPanel();
         return;
     }
 
@@ -649,7 +546,7 @@ function actualizarDisponibilidad() {
     if (!yateId || !fecha) {
         availability.textContent = 'Selecciona una embarcación y una fecha para ver horarios disponibles.';
         setText('horarios-disponibles-resumen', String(HORARIOS_BASE.length));
-        renderFeatureExperience();
+        renderHeroPanel();
         return;
     }
 
@@ -658,20 +555,20 @@ function actualizarDisponibilidad() {
     if (horasDisponibles === 0) {
         availability.classList.add('state-danger');
         availability.textContent = 'No hay horarios disponibles para esta combinación. Prueba otra fecha u otra embarcación.';
-        renderFeatureExperience();
+        renderHeroPanel();
         return;
     }
 
     if (horasReservadas.length > 0) {
         availability.classList.add('state-warning');
         availability.textContent = `Quedan ${horasDisponibles} horario(s) disponible(s). Los horarios ocupados ya fueron marcados.`;
-        renderFeatureExperience();
+        renderHeroPanel();
         return;
     }
 
     availability.classList.add('state-success');
     availability.textContent = 'Todos los horarios están disponibles para esta fecha.';
-    renderFeatureExperience();
+    renderHeroPanel();
 }
 
 function showToast(message, type = 'success') {
@@ -881,7 +778,7 @@ function setupInteractions() {
     });
 
     window.addEventListener('scroll', updateNavbarOnScroll, { passive: true });
-    window.addEventListener('resize', renderFeatureExperience, { passive: true });
+    window.addEventListener('resize', renderHeroPanel, { passive: true });
     updateNavbarOnScroll();
 }
 
@@ -889,7 +786,7 @@ function setupInteractions() {
 window.addEventListener('DOMContentLoaded', () => {
     renderFlota();
     initFlatpickr();
-    renderFeatureExperience();
+    renderHeroPanel();
     cargarReservas();
     setupInteractions();
     actualizarDisponibilidad();
