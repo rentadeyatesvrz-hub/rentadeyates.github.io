@@ -1,0 +1,36 @@
+CODIGO FIREBASE PARA GUARDAR ID, NOMBRE Y FECHA DE CUMPLEANOS
+
+Usa este bloque dentro de realizarReserva() para guardar todo en Firebase junto con los demas datos:
+
+const reservaRef = db.collection('reservas').doc();
+
+const payload = {
+    reservationId: reservaRef.id,
+    nombreCliente,
+    fechaCumpleanos,
+    yate: yate.nombre,
+    yateId,
+    fecha,
+    hora,
+    crm: {
+        status: 'new',
+        crmStage: 'reservation_requested',
+        source: 'website',
+        channel: 'reservation_modal',
+        deviceType: getCRMDeviceType(),
+        tracking: trackingSnapshot
+    },
+    status: 'new',
+    crmStage: 'reservation_requested',
+    source: 'website',
+    tracking: trackingSnapshot,
+    whatsappLink: getWhatsAppLink({ nombreCliente, yate: yate.nombre, fecha, hora }),
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+};
+
+await reservaRef.set(payload);
+
+VISUALIZACION EN WEB Y MOVIL
+- nombreCliente y fechaCumpleanos se guardan en Firebase
+- NO se muestran en los paneles de reservas
+- solo se muestran yate, fecha y hora
