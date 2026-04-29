@@ -28,8 +28,8 @@
         window.SITE_CONFIG = {
             brandName: 'Elite Yacht Rentals',
             siteUrl: 'https://tudominio.com',
-            businessPhone: '522299999999',
-            businessPhoneDisplay: '+52 229 999 9999',
+            businessPhone: '52295202785',
+            businessPhoneDisplay: '+52 229 520 2785',
             businessEmail: 'reservas@tudominio.com',
             location: 'Veracruz, México',
             googleTagId: 'GT-XXXXXXXXXX',
@@ -71,7 +71,7 @@
       "name": "Elite Yacht Rentals",
       "description": "Renta de lanchas y yates de lujo en Veracruz con reservas en línea y atención por WhatsApp Business.",
       "url": "https://tudominio.com/",
-      "telephone": "+52 229 999 9999",
+      "telephone": "+52 229 520 2785",
       "email": "reservas@tudominio.com",
       "areaServed": "Veracruz, México",
       "address": {
@@ -281,7 +281,7 @@
                 <div>
                     <span class="section-kicker">Contacto</span>
                     <h2 class="text-3xl sm:text-4xl font-bold tracking-[-0.04em] mt-4 mb-3">Reserva tu Yate o Lancha</h2>
-                    <p class="text-slate-300 max-w-2xl">Más información y atención directa por WhatsApp Business.</p>
+                    <p class="text-slate-300 max-w-2xl">Más información y atención contáctanos via WhatsApp.</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3">
                     <a href="#flota" class="outline-button text-center">Ver flota</a>
@@ -320,7 +320,7 @@
                                 <div>
                                     <label class="modal-label">Número de contacto</label>
                                     <div class="input-shell">
-                                        <input id="telefono-cliente" type="tel" inputmode="tel" autocomplete="tel" class="premium-input w-full" placeholder="Ej. 229 123 4567">
+                                        <input id="telefono-cliente" type="tel" inputmode="tel" autocomplete="tel" class="premium-input w-full" placeholder="Ej. 229 520 2785">
                                     </div>
                                 </div>
 
