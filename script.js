@@ -197,7 +197,7 @@ const db = firebase.firestore();
 const yates = [
     { id: 1, nombre: "La Gozadera", tipo: "Lancha", precio: "MX$9,000/8h", capacidad: "Hasta 7 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1776209301902-7da8b91f85d9?q=80&w=586&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
     { id: 2, nombre: "La Pachanga", tipo: "Lancha", precio: "MX$10,500/8h", capacidad: "Hasta 7 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1776215340109-2a5f8e02e9ee?q=80&w=324&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-    { id: 3, nombre: "Monky", tipo: "Yate", precio: "MX$8,000/8h", capacidad: "20 personas", img: "https://images.unsplash.com/photo-1776216277168-5982a79aa5d2?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { id: 3, nombre: "Monky", tipo: "Lancha", precio: "MX$8,000/8h", capacidad: "10 personas", img: "https://images.unsplash.com/photo-1777789777463-01635c7ed8aa?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
     { id: 4, nombre: "Percales", tipo: "Lancha", precio: "MX$3,500xh ò MX$15,000/6h", capacidad: "8 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1776208903634-4aab68769156?q=80&w=1022&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" }
 ];
 
