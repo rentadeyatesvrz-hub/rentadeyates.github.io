@@ -21,10 +21,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
         body { background:#0a0a0a; color:#fff; font-family:'Inter', system-ui, sans-serif; }
+        .sidebar { background:#111113; }
         .kpi-card { background:linear-gradient(145deg, #1f1f23, #18181b); border:1px solid #27272a; transition:all 0.3s ease; }
-        .kpi-card:hover { transform:translateY(-3px); border-color:#fbbf24; }
+        .kpi-card:hover { transform:translateY(-4px); border-color:#fbbf24; }
         .kpi-number { font-family:'Space Grotesk', sans-serif; font-size:2.3rem; font-weight:600; letter-spacing:-0.04em; }
-        .glass { background:rgba(255,255,255,0.04); backdrop-filter:blur(20px); }
+        .glass { background:rgba(255,255,255,0.035); backdrop-filter:blur(20px); }
         .live-dot { animation:pulse 2s infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
     </style>
@@ -79,7 +80,7 @@
                 </div>
             </div>
 
-            <!-- Gráficos y filtros -->
+            <!-- Gráficos -->
             <div class="glass border border-white/10 rounded-3xl p-6 md:p-8 mb-8">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div>
@@ -206,7 +207,6 @@
                     if (this.barChartInstance) this.barChartInstance.destroy();
                     if (this.pieChartInstance) this.pieChartInstance.destroy();
 
-                    // Bar Chart
                     const grouped = {};
                     this.allReservas.forEach(r => grouped[r.fecha] = (grouped[r.fecha]||0) + 1);
                     const labels = Object.keys(grouped).sort();
@@ -218,7 +218,6 @@
                         options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{grid:{color:'rgba(255,255,255,0.08)'}, ticks:{color:'#888'}}, x:{grid:{color:'rgba(255,255,255,0.08)'}, ticks:{color:'#888'}} }}
                     });
 
-                    // Pie Chart
                     const conteoYates = {};
                     this.allReservas.forEach(r => conteoYates[r.yate] = (conteoYates[r.yate]||0) + 1);
 
