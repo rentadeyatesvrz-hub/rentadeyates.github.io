@@ -1,8 +1,8 @@
 {
   "name": "Admin Elite Yacht Rentals",
   "short_name": "Elite Admin",
-  "description": "Panel de Administración de Elite Yacht Rentals - Veracruz",
-  "start_url": "/admin.html",
+  "description": "Panel de Administración de Elite Yacht Rentals",
+  "start_url": "/rentadeyates.github.io/admin.html",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#fbbf24",
