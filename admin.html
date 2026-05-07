@@ -6,7 +6,6 @@
     <meta name="theme-color" content="#0a0a0a">
     <title>Admin • Elite Yacht Rentals</title>
 
-    <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,22 +20,26 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
         body { background:#0a0a0a; color:#fff; font-family:'Inter', system-ui, sans-serif; }
-        .sidebar { background:#111113; }
         .kpi-card { background:linear-gradient(145deg, #1f1f23, #18181b); border:1px solid #27272a; transition:all 0.3s ease; }
-        .kpi-card:hover { transform:translateY(-4px); border-color:#fbbf24; }
-        .kpi-number { font-family:'Space Grotesk', sans-serif; font-size:2.3rem; font-weight:600; letter-spacing:-0.04em; }
-        .glass { background:rgba(255,255,255,0.035); backdrop-filter:blur(20px); }
+        .kpi-card:hover { transform:translateY(-3px); border-color:#fbbf24; }
+        .kpi-number { font-family:'Space Grotesk', sans-serif; font-size:2.1rem; font-weight:600; letter-spacing:-0.04em; }
+        .glass { background:rgba(255,255,255,0.04); backdrop-filter:blur(20px); }
         .live-dot { animation:pulse 2s infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        table { font-size: 0.95rem; }
     </style>
 </head>
 <body class="min-h-screen flex" x-data="adminApp()">
 
     <!-- SIDEBAR -->
-    <div class="sidebar w-72 min-h-screen p-6 fixed lg:static flex flex-col bg-[#111113]">
-        <div class="flex items-center gap-3 mb-12">
-            <span class="text-4xl">⛵</span>
-            <h1 class="text-3xl font-bold tracking-[-0.04em] text-amber-400">ELITE</h1>
+    <div class="sidebar w-72 min-h-screen p-6 fixed lg:static flex flex-col bg-[#111113] z-50 transition-transform" 
+         :class="{ '-translate-x-full lg:translate-x-0': !sidebarOpen }">
+        <div class="flex items-center justify-between mb-12">
+            <div class="flex items-center gap-3">
+                <span class="text-4xl">⛵</span>
+                <h1 class="text-3xl font-bold tracking-[-0.04em] text-amber-400">ELITE</h1>
+            </div>
+            <button @click="sidebarOpen = false" class="lg:hidden text-3xl">✕</button>
         </div>
         <nav class="space-y-2">
             <a href="#" class="flex items-center gap-3 bg-amber-400 text-zinc-950 px-6 py-4 rounded-3xl font-semibold">📊 Dashboard</a>
@@ -44,71 +47,77 @@
         </nav>
     </div>
 
-    <div class="flex-1 lg:ml-72 p-6 md:p-8">
-        <!-- LOGIN -->
-        <div :class="{ 'hidden': isLoggedIn }" class="max-w-md mx-auto glass border border-white/10 rounded-3xl p-10">
-            <h2 class="text-3xl font-semibold text-center mb-8">Acceso Admin</h2>
-            <input id="email" type="email" placeholder="Correo administrador" class="w-full bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 mb-4">
-            <input id="password" type="password" placeholder="Contraseña" class="w-full bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 mb-6">
-            <button @click="login()" class="w-full bg-amber-400 text-zinc-950 py-4 rounded-2xl font-semibold text-lg">Entrar al Panel</button>
+    <div class="flex-1 lg:ml-72">
+        <!-- Header móvil -->
+        <div class="lg:hidden bg-[#111113] p-4 flex items-center justify-between border-b border-white/10">
+            <button @click="sidebarOpen = true" class="text-3xl">☰</button>
+            <h1 class="text-2xl font-semibold">Panel Admin</h1>
+            <button @click="logout()" class="text-red-400">Salir</button>
         </div>
 
-        <!-- DASHBOARD -->
-        <div :class="{ 'hidden': !isLoggedIn }">
-            <div class="flex justify-between items-center mb-10">
-                <h1 class="text-3xl font-semibold tracking-tight">Panel de Administración</h1>
-                <button @click="logout()" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-2xl text-sm font-medium">Cerrar Sesión</button>
+        <div class="p-6 md:p-8">
+            <!-- LOGIN -->
+            <div :class="{ 'hidden': isLoggedIn }" class="max-w-md mx-auto glass border border-white/10 rounded-3xl p-10">
+                <h2 class="text-3xl font-semibold text-center mb-8">Acceso Admin</h2>
+                <input id="email" type="email" placeholder="Correo administrador" class="w-full bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 mb-4">
+                <input id="password" type="password" placeholder="Contraseña" class="w-full bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 mb-6">
+                <button @click="login()" class="w-full bg-amber-400 text-zinc-950 py-4 rounded-2xl font-semibold text-lg">Entrar al Panel</button>
             </div>
 
-            <!-- KPIs -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-                <div class="kpi-card rounded-3xl p-6">
-                    <p class="text-emerald-400 text-xs tracking-widest">RESERVAS HOY</p>
-                    <p class="kpi-number text-white mt-2" x-text="kpiReservasHoy"></p>
-                </div>
-                <div class="kpi-card rounded-3xl p-6">
-                    <p class="text-amber-400 text-xs tracking-widest">INGRESOS HOY</p>
-                    <p class="kpi-number text-amber-400 mt-2" x-text="kpiIngresosHoy"></p>
-                </div>
-                <div class="kpi-card rounded-3xl p-6">
-                    <p class="text-white text-xs tracking-widest">YATE MÁS RESERVADO</p>
-                    <p class="kpi-number text-white mt-2" x-text="kpiYatePopular"></p>
-                </div>
-                <div class="kpi-card rounded-3xl p-6">
-                    <p class="text-sky-400 text-xs tracking-widest">OCUPACIÓN</p>
-                    <p class="kpi-number text-emerald-400 mt-2" x-text="kpiOcupacion"></p>
-                </div>
-            </div>
+            <!-- DASHBOARD -->
+            <div :class="{ 'hidden': !isLoggedIn }">
+                <h1 class="text-3xl font-semibold tracking-tight mb-8 hidden lg:block">Panel de Administración</h1>
 
-            <!-- Gráficos -->
-            <div class="glass border border-white/10 rounded-3xl p-6 md:p-8 mb-8">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div>
-                        <h3 class="text-xs font-medium text-slate-400 mb-4">Reservas por día</h3>
-                        <canvas id="barChart" class="w-full h-64"></canvas>
+                <!-- KPIs -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+                    <div class="kpi-card rounded-3xl p-6">
+                        <p class="text-emerald-400 text-xs tracking-widest">RESERVAS HOY</p>
+                        <p class="kpi-number text-white mt-2" x-text="kpiReservasHoy"></p>
                     </div>
-                    <div>
-                        <h3 class="text-xs font-medium text-slate-400 mb-4">Distribución por yate</h3>
-                        <canvas id="pieChart" class="w-full h-64"></canvas>
+                    <div class="kpi-card rounded-3xl p-6">
+                        <p class="text-amber-400 text-xs tracking-widest">INGRESOS HOY</p>
+                        <p class="kpi-number text-amber-400 mt-2" x-text="kpiIngresosHoy"></p>
+                    </div>
+                    <div class="kpi-card rounded-3xl p-6">
+                        <p class="text-white text-xs tracking-widest">YATE MÁS RESERVADO</p>
+                        <p class="kpi-number text-white mt-2" x-text="kpiYatePopular"></p>
+                    </div>
+                    <div class="kpi-card rounded-3xl p-6">
+                        <p class="text-sky-400 text-xs tracking-widest">OCUPACIÓN</p>
+                        <p class="kpi-number text-emerald-400 mt-2" x-text="kpiOcupacion"></p>
                     </div>
                 </div>
-            </div>
 
-            <!-- Tabla -->
-            <div class="glass border border-white/10 rounded-3xl overflow-hidden">
-                <table class="w-full text-sm">
-                    <thead class="bg-zinc-900">
-                        <tr>
-                            <th class="px-6 py-5 text-left">YATE</th>
-                            <th class="px-6 py-5 text-left">FECHA</th>
-                            <th class="px-6 py-5 text-left">HORA</th>
-                            <th class="px-6 py-5 text-left">CLIENTE</th>
-                            <th class="px-6 py-5 text-left">CUMPLEAÑOS</th>
-                            <th class="px-6 py-5 text-center">ACCIÓN</th>
-                        </tr>
-                    </thead>
-                    <tbody id="reservas-table" class="divide-y divide-white/10"></tbody>
-                </table>
+                <!-- Gráficos -->
+                <div class="glass border border-white/10 rounded-3xl p-6 md:p-8 mb-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-xs font-medium text-slate-400 mb-4">Reservas por día</h3>
+                            <canvas id="barChart" class="w-full h-64"></canvas>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-medium text-slate-400 mb-4">Distribución por yate</h3>
+                            <canvas id="pieChart" class="w-full h-64"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla -->
+                <div class="glass border border-white/10 rounded-3xl overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead class="bg-zinc-900">
+                            <tr>
+                                <th class="px-6 py-5 text-left">YATE</th>
+                                <th class="px-6 py-5 text-left">FECHA</th>
+                                <th class="px-6 py-5 text-left">HORA</th>
+                                <th class="px-6 py-5 text-left">CLIENTE</th>
+                                <th class="px-6 py-5 text-left">CUMPLEAÑOS</th>
+                                <th class="px-6 py-5 text-center">ACCIÓN</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reservas-table" class="divide-y divide-white/10"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -117,6 +126,7 @@
         function adminApp() {
             return {
                 isLoggedIn: false,
+                sidebarOpen: false,
                 allReservas: [],
                 barChartInstance: null,
                 pieChartInstance: null,
@@ -190,12 +200,12 @@
                     const tbody = document.getElementById('reservas-table');
                     tbody.innerHTML = this.allReservas.map(r => `
                         <tr class="hover:bg-white/5 transition-colors">
-                            <td class="px-8 py-5">${r.yate || '-'}</td>
-                            <td class="px-8 py-5">${r.fecha || '-'}</td>
-                            <td class="px-8 py-5">${r.hora || '-'}</td>
-                            <td class="px-8 py-5">${r.nombreCliente || r.nombre || '-'}</td>
-                            <td class="px-8 py-5">${r.fechaCumpleanos || '-'}</td>
-                            <td class="px-8 py-5 text-center">
+                            <td class="px-6 py-5">${r.yate || '-'}</td>
+                            <td class="px-6 py-5">${r.fecha || '-'}</td>
+                            <td class="px-6 py-5">${r.hora || '-'}</td>
+                            <td class="px-6 py-5">${r.nombreCliente || r.nombre || '-'}</td>
+                            <td class="px-6 py-5">${r.fechaCumpleanos || '-'}</td>
+                            <td class="px-6 py-5 text-center">
                                 <button onclick="agregarAGoogleCalendar('${r.yate||''}','${r.fecha||''}','${r.hora||''}')" class="text-emerald-400 mr-4">📅</button>
                                 <button onclick="borrarReserva('${r.id}')" class="text-red-400 text-xl">🗑️</button>
                             </td>
