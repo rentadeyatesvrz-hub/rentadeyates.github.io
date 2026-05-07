@@ -21,7 +21,6 @@
         .glass { background:rgba(255,255,255,0.035); backdrop-filter:blur(20px); }
         .live-dot { animation:pulse 2s infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        table th { font-size:0.73rem; letter-spacing:0.8px; text-transform:uppercase; }
     </style>
 </head>
 <body class="min-h-screen flex">
@@ -40,84 +39,95 @@
 
     <!-- MAIN -->
     <div class="flex-1 lg:ml-72 p-8">
-        <div class="flex justify-between items-center mb-10">
-            <div>
-                <h1 class="text-3xl font-semibold tracking-tight">Panel de Administración</h1>
-                <p id="last-updated" class="text-emerald-400 text-sm flex items-center gap-2 mt-1">
-                    <span class="w-2 h-2 bg-emerald-400 rounded-full live-dot"></span>
-                    Conectado a Firebase • En vivo
-                </p>
-            </div>
-            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-2xl text-sm font-medium">Cerrar Sesión</button>
+        <!-- LOGIN -->
+        <div id="login-screen" class="max-w-md mx-auto glass border border-white/10 rounded-3xl p-10">
+            <h2 class="text-3xl font-semibold text-center mb-8">Acceso Admin</h2>
+            <input id="email" type="email" placeholder="Correo administrador" class="w-full bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 mb-4">
+            <input id="password" type="password" placeholder="Contraseña" class="w-full bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 mb-6">
+            <button onclick="login()" class="w-full bg-amber-400 text-zinc-950 py-4 rounded-2xl font-semibold text-lg">Entrar al Panel</button>
         </div>
 
-        <!-- KPIs -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <div class="kpi-card rounded-3xl p-7">
-                <p class="text-emerald-400 text-xs tracking-widest">RESERVAS HOY</p>
-                <p id="kpi-reservas-hoy" class="kpi-number text-white mt-3">0</p>
-            </div>
-            <div class="kpi-card rounded-3xl p-7">
-                <p class="text-amber-400 text-xs tracking-widest">INGRESOS HOY</p>
-                <p id="kpi-ingresos" class="kpi-number text-amber-400 mt-3">$0</p>
-            </div>
-            <div class="kpi-card rounded-3xl p-7">
-                <p class="text-white text-xs tracking-widest">YATE MÁS RESERVADO</p>
-                <p id="kpi-yate-popular" class="kpi-number text-white mt-3">—</p>
-            </div>
-            <div class="kpi-card rounded-3xl p-7">
-                <p class="text-sky-400 text-xs tracking-widest">OCUPACIÓN</p>
-                <p id="kpi-ocupacion" class="kpi-number text-emerald-400 mt-3">0%</p>
-            </div>
-        </div>
-
-        <!-- Filtros + Gráficos -->
-        <div class="glass border border-white/10 rounded-3xl p-8 mb-8">
-            <div class="flex flex-wrap gap-4 items-end mb-8">
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="hidden">
+            <div class="flex justify-between items-center mb-10">
                 <div>
-                    <label class="text-xs text-slate-400 block mb-1">Desde</label>
-                    <input id="filter-desde" class="flatpickr-input bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 w-44 text-sm" placeholder="dd/mm/aaaa">
+                    <h1 class="text-3xl font-semibold tracking-tight">Panel de Administración</h1>
+                    <p id="last-updated" class="text-emerald-400 text-sm flex items-center gap-2 mt-1">
+                        <span class="w-2 h-2 bg-emerald-400 rounded-full live-dot"></span>
+                        Conectado a Firebase • En vivo
+                    </p>
                 </div>
-                <div>
-                    <label class="text-xs text-slate-400 block mb-1">Hasta</label>
-                    <input id="filter-hasta" class="flatpickr-input bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 w-44 text-sm" placeholder="dd/mm/aaaa">
-                </div>
-                <button onclick="applyFilters()" class="bg-amber-400 text-zinc-950 px-8 py-4 rounded-2xl font-medium text-sm">Filtrar</button>
-                <button onclick="resetFilters()" class="border border-white/30 hover:bg-white/10 px-8 py-4 rounded-2xl text-sm">Resetear</button>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-2xl text-sm font-medium">Cerrar Sesión</button>
+            </div>
 
-                <div class="ml-auto flex gap-3">
-                    <button onclick="borrarTodasLasReservas()" class="bg-red-600 hover:bg-red-700 px-6 py-4 rounded-2xl text-sm font-medium flex items-center gap-2">🗑️ Borrar todas</button>
-                    <button onclick="exportarCSV()" class="bg-emerald-600 hover:bg-emerald-500 px-6 py-4 rounded-2xl font-medium flex items-center gap-2">📤 Exportar CSV</button>
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="kpi-card rounded-3xl p-7">
+                    <p class="text-emerald-400 text-xs tracking-widest">RESERVAS HOY</p>
+                    <p id="kpi-reservas-hoy" class="kpi-number text-white mt-3">0</p>
+                </div>
+                <div class="kpi-card rounded-3xl p-7">
+                    <p class="text-amber-400 text-xs tracking-widest">INGRESOS HOY</p>
+                    <p id="kpi-ingresos" class="kpi-number text-amber-400 mt-3">$0</p>
+                </div>
+                <div class="kpi-card rounded-3xl p-7">
+                    <p class="text-white text-xs tracking-widest">YATE MÁS RESERVADO</p>
+                    <p id="kpi-yate-popular" class="kpi-number text-white mt-3">—</p>
+                </div>
+                <div class="kpi-card rounded-3xl p-7">
+                    <p class="text-sky-400 text-xs tracking-widest">OCUPACIÓN</p>
+                    <p id="kpi-ocupacion" class="kpi-number text-emerald-400 mt-3">0%</p>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                    <h3 class="text-xs font-medium text-slate-400 mb-4">Reservas por día</h3>
-                    <canvas id="barChart" class="w-full h-64"></canvas>
+            <!-- Filtros + Gráficos -->
+            <div class="glass border border-white/10 rounded-3xl p-8 mb-8">
+                <div class="flex flex-wrap gap-4 items-end mb-8">
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">Desde</label>
+                        <input id="filter-desde" class="flatpickr-input bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 w-44 text-sm" placeholder="dd/mm/aaaa">
+                    </div>
+                    <div>
+                        <label class="text-xs text-slate-400 block mb-1">Hasta</label>
+                        <input id="filter-hasta" class="flatpickr-input bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 w-44 text-sm" placeholder="dd/mm/aaaa">
+                    </div>
+                    <button onclick="applyFilters()" class="bg-amber-400 text-zinc-950 px-8 py-4 rounded-2xl font-medium text-sm">Filtrar</button>
+                    <button onclick="resetFilters()" class="border border-white/30 hover:bg-white/10 px-8 py-4 rounded-2xl text-sm">Resetear</button>
+
+                    <div class="ml-auto flex gap-3">
+                        <button onclick="borrarTodasLasReservas()" class="bg-red-600 hover:bg-red-700 px-6 py-4 rounded-2xl text-sm font-medium flex items-center gap-2">🗑️ Borrar todas</button>
+                        <button onclick="exportarCSV()" class="bg-emerald-600 hover:bg-emerald-500 px-6 py-4 rounded-2xl font-medium flex items-center gap-2">📤 Exportar CSV</button>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-xs font-medium text-slate-400 mb-4">Distribución por yate</h3>
-                    <canvas id="pieChart" class="w-full h-64"></canvas>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xs font-medium text-slate-400 mb-4">Reservas por día</h3>
+                        <canvas id="barChart" class="w-full h-64"></canvas>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-medium text-slate-400 mb-4">Distribución por yate</h3>
+                        <canvas id="pieChart" class="w-full h-64"></canvas>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Tabla -->
-        <div class="glass border border-white/10 rounded-3xl overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-zinc-900">
-                    <tr>
-                        <th class="px-8 py-5 text-left text-xs font-medium text-slate-400">YATE</th>
-                        <th class="px-8 py-5 text-left text-xs font-medium text-slate-400">FECHA</th>
-                        <th class="px-8 py-5 text-left text-xs font-medium text-slate-400">HORA</th>
-                        <th class="px-8 py-5 text-left text-xs font-medium text-slate-400">CLIENTE</th>
-                        <th class="px-8 py-5 text-left text-xs font-medium text-slate-400">CUMPLEAÑOS</th>
-                        <th class="px-8 py-5 text-center text-xs font-medium text-slate-400">ACCIÓN</th>
-                    </tr>
-                </thead>
-                <tbody id="reservas-table" class="divide-y divide-white/10"></tbody>
-            </table>
+            <!-- Tabla -->
+            <div class="glass border border-white/10 rounded-3xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-zinc-900">
+                        <tr>
+                            <th class="px-8 py-5 text-left">YATE</th>
+                            <th class="px-8 py-5 text-left">FECHA</th>
+                            <th class="px-8 py-5 text-left">HORA</th>
+                            <th class="px-8 py-5 text-left">CLIENTE</th>
+                            <th class="px-8 py-5 text-left">CUMPLEAÑOS</th>
+                            <th class="px-8 py-5 text-center">ACCIÓN</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservas-table" class="divide-y divide-white/10"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -176,7 +186,7 @@
                         <button onclick="borrarReserva('${r.id}')" class="text-red-400 hover:text-red-500 text-xl">🗑️</button>
                     </td>
                 </tr>
-            `).join('') : `<tr><td colspan="6" class="text-center py-12 text-slate-400">No hay reservas aún</td></tr>`;
+            `).join('') : `<tr><td colspan="6" class="text-center py-12 text-slate-400">No hay reservas registradas</td></tr>`;
         }
 
         function renderCharts(data) {
@@ -222,7 +232,9 @@
 
         function exportarCSV() {
             let csv = "Yate,Fecha,Hora,Cliente,Cumpleaños,Telefono\n";
-            allReservas.forEach(r => csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${r.nombreCliente||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`);
+            allReservas.forEach(r => {
+                csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${r.nombreCliente||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`;
+            });
             const blob = new Blob([csv], {type: 'text/csv'});
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
@@ -231,17 +243,17 @@
         }
 
         async function borrarReserva(id) {
-            if (!confirm("¿Eliminar esta reserva?")) return;
+            if (!confirm("¿Eliminar esta reserva? Esta acción no se puede deshacer.")) return;
             try {
                 await db.collection('reservas').doc(id).delete();
             } catch (e) {
-                alert("Error al eliminar");
+                alert("Error al eliminar la reserva");
             }
         }
 
         async function borrarTodasLasReservas() {
             if (!confirm("¿Borrar TODAS las reservas?")) return;
-            if (!confirm("Acción irreversible. ¿Confirmas?")) return;
+            if (!confirm("Esta acción es irreversible. ¿Confirmas por segunda vez?")) return;
             const batch = db.batch();
             const snapshot = await db.collection("reservas").get();
             snapshot.docs.forEach(doc => batch.delete(doc.ref));
@@ -257,7 +269,21 @@
             });
         }
 
-        function logout() { auth.signOut().then(() => location.reload()); }
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    cargarReservasAdmin();
+                })
+                .catch(err => alert("Error: " + err.message));
+        }
+
+        function logout() {
+            auth.signOut().then(() => location.reload());
+        }
 
         function agregarAGoogleCalendar(yate, fecha, hora) {
             if (!fecha) return;
@@ -268,7 +294,13 @@
             window.open(link, '_blank');
         }
 
-        auth.onAuthStateChanged(user => { if (user) cargarReservasAdmin(); });
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                cargarReservasAdmin();
+            }
+        });
 
         window.onload = () => {
             desdePicker = flatpickr("#filter-desde", {locale:"es", dateFormat:"d/m/Y"});
