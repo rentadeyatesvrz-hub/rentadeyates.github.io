@@ -2,8 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
     <title>Admin • Elite Yacht Rentals</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -11,16 +16,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <!-- Alpine.js -->
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.7/dist/cdn.min.js" defer></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
         body { background:#0a0a0a; color:#fff; font-family:'Inter', system-ui, sans-serif; }
-        .sidebar { background:#111113; }
         .kpi-card { background:linear-gradient(145deg, #1f1f23, #18181b); border:1px solid #27272a; transition:all 0.3s ease; }
-        .kpi-card:hover { transform:translateY(-4px); border-color:#fbbf24; }
-        .kpi-number { font-family:'Space Grotesk', sans-serif; font-size:2.35rem; font-weight:600; letter-spacing:-0.04em; }
-        .glass { background:rgba(255,255,255,0.035); backdrop-filter:blur(20px); }
+        .kpi-card:hover { transform:translateY(-3px); border-color:#fbbf24; }
+        .kpi-number { font-family:'Space Grotesk', sans-serif; font-size:2.3rem; font-weight:600; letter-spacing:-0.04em; }
+        .glass { background:rgba(255,255,255,0.04); backdrop-filter:blur(20px); }
         .live-dot { animation:pulse 2s infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
     </style>
@@ -28,7 +32,7 @@
 <body class="min-h-screen flex" x-data="adminApp()">
 
     <!-- SIDEBAR -->
-    <div class="sidebar w-72 min-h-screen p-6 fixed lg:static flex flex-col">
+    <div class="sidebar w-72 min-h-screen p-6 fixed lg:static flex flex-col bg-[#111113]">
         <div class="flex items-center gap-3 mb-12">
             <span class="text-4xl">⛵</span>
             <h1 class="text-3xl font-bold tracking-[-0.04em] text-amber-400">ELITE</h1>
@@ -39,9 +43,9 @@
         </nav>
     </div>
 
-    <div class="flex-1 lg:ml-72 p-8">
+    <div class="flex-1 lg:ml-72 p-6 md:p-8">
         <!-- LOGIN -->
-        <div id="login-screen" class="max-w-md mx-auto glass border border-white/10 rounded-3xl p-10" :class="{ 'hidden': isLoggedIn }">
+        <div :class="{ 'hidden': isLoggedIn }" class="max-w-md mx-auto glass border border-white/10 rounded-3xl p-10">
             <h2 class="text-3xl font-semibold text-center mb-8">Acceso Admin</h2>
             <input id="email" type="email" placeholder="Correo administrador" class="w-full bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 mb-4">
             <input id="password" type="password" placeholder="Contraseña" class="w-full bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 mb-6">
@@ -51,56 +55,32 @@
         <!-- DASHBOARD -->
         <div :class="{ 'hidden': !isLoggedIn }">
             <div class="flex justify-between items-center mb-10">
-                <div>
-                    <h1 class="text-3xl font-semibold tracking-tight">Panel de Administración</h1>
-                    <p class="text-emerald-400 text-sm flex items-center gap-2 mt-1">
-                        <span class="w-2 h-2 bg-emerald-400 rounded-full live-dot"></span>
-                        Conectado a Firebase • En vivo
-                    </p>
-                </div>
+                <h1 class="text-3xl font-semibold tracking-tight">Panel de Administración</h1>
                 <button @click="logout()" class="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-2xl text-sm font-medium">Cerrar Sesión</button>
             </div>
 
             <!-- KPIs -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-                <div class="kpi-card rounded-3xl p-7">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+                <div class="kpi-card rounded-3xl p-6">
                     <p class="text-emerald-400 text-xs tracking-widest">RESERVAS HOY</p>
-                    <p class="kpi-number text-white mt-3" x-text="kpiReservasHoy"></p>
+                    <p class="kpi-number text-white mt-2" x-text="kpiReservasHoy"></p>
                 </div>
-                <div class="kpi-card rounded-3xl p-7">
+                <div class="kpi-card rounded-3xl p-6">
                     <p class="text-amber-400 text-xs tracking-widest">INGRESOS HOY</p>
-                    <p class="kpi-number text-amber-400 mt-3" x-text="kpiIngresosHoy"></p>
+                    <p class="kpi-number text-amber-400 mt-2" x-text="kpiIngresosHoy"></p>
                 </div>
-                <div class="kpi-card rounded-3xl p-7">
+                <div class="kpi-card rounded-3xl p-6">
                     <p class="text-white text-xs tracking-widest">YATE MÁS RESERVADO</p>
-                    <p class="kpi-number text-white mt-3" x-text="kpiYatePopular"></p>
+                    <p class="kpi-number text-white mt-2" x-text="kpiYatePopular"></p>
                 </div>
-                <div class="kpi-card rounded-3xl p-7">
+                <div class="kpi-card rounded-3xl p-6">
                     <p class="text-sky-400 text-xs tracking-widest">OCUPACIÓN</p>
-                    <p class="kpi-number text-emerald-400 mt-3" x-text="kpiOcupacion"></p>
+                    <p class="kpi-number text-emerald-400 mt-2" x-text="kpiOcupacion"></p>
                 </div>
             </div>
 
-            <!-- Filtros + Gráficos -->
-            <div class="glass border border-white/10 rounded-3xl p-8 mb-8">
-                <div class="flex flex-wrap gap-4 items-end mb-8">
-                    <div>
-                        <label class="text-xs text-slate-400 block mb-1">Desde</label>
-                        <input id="filter-desde" class="flatpickr-input bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 w-44 text-sm" placeholder="dd/mm/aaaa">
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-400 block mb-1">Hasta</label>
-                        <input id="filter-hasta" class="flatpickr-input bg-zinc-900 border border-white/20 rounded-2xl px-5 py-4 w-44 text-sm" placeholder="dd/mm/aaaa">
-                    </div>
-                    <button @click="applyFilters()" class="bg-amber-400 text-zinc-950 px-8 py-4 rounded-2xl font-medium text-sm">Filtrar</button>
-                    <button @click="resetFilters()" class="border border-white/30 hover:bg-white/10 px-8 py-4 rounded-2xl text-sm">Resetear</button>
-
-                    <div class="ml-auto flex gap-3">
-                        <button @click="borrarTodasLasReservas()" class="bg-red-600 hover:bg-red-700 px-6 py-4 rounded-2xl text-sm font-medium flex items-center gap-2">🗑️ Borrar todas</button>
-                        <button @click="exportarCSV()" class="bg-emerald-600 hover:bg-emerald-500 px-6 py-4 rounded-2xl font-medium flex items-center gap-2">📤 Exportar CSV</button>
-                    </div>
-                </div>
-
+            <!-- Gráficos y filtros -->
+            <div class="glass border border-white/10 rounded-3xl p-6 md:p-8 mb-8">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div>
                         <h3 class="text-xs font-medium text-slate-400 mb-4">Reservas por día</h3>
@@ -118,12 +98,12 @@
                 <table class="w-full text-sm">
                     <thead class="bg-zinc-900">
                         <tr>
-                            <th class="px-8 py-5 text-left">YATE</th>
-                            <th class="px-8 py-5 text-left">FECHA</th>
-                            <th class="px-8 py-5 text-left">HORA</th>
-                            <th class="px-8 py-5 text-left">CLIENTE</th>
-                            <th class="px-8 py-5 text-left">CUMPLEAÑOS</th>
-                            <th class="px-8 py-5 text-center">ACCIÓN</th>
+                            <th class="px-6 py-5 text-left">YATE</th>
+                            <th class="px-6 py-5 text-left">FECHA</th>
+                            <th class="px-6 py-5 text-left">HORA</th>
+                            <th class="px-6 py-5 text-left">CLIENTE</th>
+                            <th class="px-6 py-5 text-left">CUMPLEAÑOS</th>
+                            <th class="px-6 py-5 text-center">ACCIÓN</th>
                         </tr>
                     </thead>
                     <tbody id="reservas-table" class="divide-y divide-white/10"></tbody>
@@ -139,8 +119,6 @@
                 allReservas: [],
                 barChartInstance: null,
                 pieChartInstance: null,
-                desdePicker: null,
-                hastaPicker: null,
 
                 kpiReservasHoy: 0,
                 kpiIngresosHoy: '$0',
@@ -173,7 +151,7 @@
                     const password = document.getElementById('password').value;
                     firebase.auth().signInWithEmailAndPassword(email, password)
                         .then(() => this.isLoggedIn = true)
-                        .catch(err => alert("Error de login: " + err.message));
+                        .catch(err => alert("Error: " + err.message));
                 },
 
                 logout() {
@@ -209,24 +187,26 @@
 
                 renderTable() {
                     const tbody = document.getElementById('reservas-table');
-                    tbody.innerHTML = this.allReservas.length ? this.allReservas.map(r => `
+                    tbody.innerHTML = this.allReservas.map(r => `
                         <tr class="hover:bg-white/5 transition-colors">
                             <td class="px-8 py-5">${r.yate || '-'}</td>
                             <td class="px-8 py-5">${r.fecha || '-'}</td>
                             <td class="px-8 py-5">${r.hora || '-'}</td>
                             <td class="px-8 py-5">${r.nombreCliente || r.nombre || '-'}</td>
                             <td class="px-8 py-5">${r.fechaCumpleanos || '-'}</td>
-                            <td class="px-8 py-5 text-center flex items-center justify-center gap-4">
-                                <button onclick="agregarAGoogleCalendar('${r.yate||''}','${r.fecha||''}','${r.hora||''}')" class="text-emerald-400 hover:text-emerald-300">📅</button>
-                                <button onclick="borrarReserva('${r.id}')" class="text-red-400 hover:text-red-500 text-xl">🗑️</button>
+                            <td class="px-8 py-5 text-center">
+                                <button onclick="agregarAGoogleCalendar('${r.yate||''}','${r.fecha||''}','${r.hora||''}')" class="text-emerald-400 mr-4">📅</button>
+                                <button onclick="borrarReserva('${r.id}')" class="text-red-400 text-xl">🗑️</button>
                             </td>
                         </tr>
-                    `).join('') : `<tr><td colspan="6" class="text-center py-12 text-slate-400">No hay reservas registradas</td></tr>`;
+                    `).join('');
                 },
 
                 renderCharts() {
-                    // Bar Chart
                     if (this.barChartInstance) this.barChartInstance.destroy();
+                    if (this.pieChartInstance) this.pieChartInstance.destroy();
+
+                    // Bar Chart
                     const grouped = {};
                     this.allReservas.forEach(r => grouped[r.fecha] = (grouped[r.fecha]||0) + 1);
                     const labels = Object.keys(grouped).sort();
@@ -239,7 +219,6 @@
                     });
 
                     // Pie Chart
-                    if (this.pieChartInstance) this.pieChartInstance.destroy();
                     const conteoYates = {};
                     this.allReservas.forEach(r => conteoYates[r.yate] = (conteoYates[r.yate]||0) + 1);
 
@@ -250,43 +229,20 @@
                     });
                 },
 
-                applyFilters() {
-                    // Implementación básica (puedes expandir con flatpickr si lo deseas)
-                    this.renderTable();
-                    this.renderCharts();
-                },
-
-                resetFilters() {
-                    this.renderTable();
-                    this.renderCharts();
-                },
-
-                exportarCSV() {
-                    let csv = "Yate,Fecha,Hora,Cliente,Cumpleaños,Telefono\n";
-                    this.allReservas.forEach(r => {
-                        csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${r.nombreCliente||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`;
-                    });
-                    const blob = new Blob([csv], {type: 'text/csv'});
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `reservas_elite_${new Date().toISOString().slice(0,10)}.csv`;
-                    link.click();
-                },
-
                 borrarReserva(id) {
-                    if (!confirm("¿Eliminar esta reserva?")) return;
-                    firebase.firestore().collection('reservas').doc(id).delete()
-                        .catch(() => alert("Error al eliminar"));
+                    if (confirm("¿Eliminar esta reserva?")) {
+                        firebase.firestore().collection('reservas').doc(id).delete();
+                    }
                 },
 
                 borrarTodasLasReservas() {
-                    if (!confirm("¿Borrar TODAS las reservas?")) return;
-                    if (!confirm("Acción irreversible. ¿Confirmas?")) return;
-                    const batch = firebase.firestore().batch();
-                    firebase.firestore().collection("reservas").get().then(snapshot => {
-                        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-                        batch.commit();
-                    });
+                    if (confirm("¿Borrar TODAS las reservas?") && confirm("Acción irreversible. ¿Confirmas?")) {
+                        const batch = firebase.firestore().batch();
+                        firebase.firestore().collection("reservas").get().then(snapshot => {
+                            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                            batch.commit();
+                        });
+                    }
                 },
 
                 todayText() {
@@ -302,6 +258,18 @@
                     const end = `${fechaISO}T${hora.split(':')[0]}:${parseInt(hora.split(':')[1])+2}:00`;
                     const link = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Reserva Elite - ' + yate)}&dates=${start.replace(/[:-]/g,'')}/${end.replace(/[:-]/g,'')}`;
                     window.open(link, '_blank');
+                },
+
+                exportarCSV() {
+                    let csv = "Yate,Fecha,Hora,Cliente,Cumpleaños,Telefono\n";
+                    this.allReservas.forEach(r => {
+                        csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${r.nombreCliente||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`;
+                    });
+                    const blob = new Blob([csv], {type: 'text/csv'});
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `reservas_${new Date().toISOString().slice(0,10)}.csv`;
+                    link.click();
                 }
             }
         }
