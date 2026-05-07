@@ -13,37 +13,14 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
-        
-        body { 
-            background: #0a0a0a; 
-            color: #fff; 
-            font-family: 'Inter', system-ui, sans-serif; 
-        }
-        .sidebar { background: #111113; }
-        .kpi-card { 
-            background: #1a1a1e; 
-            border: 1px solid #27272a; 
-            transition: all 0.3s ease; 
-        }
-        .kpi-card:hover { 
-            transform: translateY(-3px); 
-            border-color: #fbbf24; 
-        }
-        .kpi-number { 
-            font-family: 'Space Grotesk', sans-serif; 
-            font-size: 2.4rem; 
-            font-weight: 600; 
-            letter-spacing: -0.03em; 
-        }
-        .glass { 
-            background: rgba(255,255,255,0.04); 
-            backdrop-filter: blur(20px); 
-        }
-        .live-dot { animation: pulse 2s infinite; }
+        body { background:#0a0a0a; color:#fff; font-family:'Inter', system-ui, sans-serif; }
+        .sidebar { background:#111113; }
+        .kpi-card { background:#1a1a1e; border:1px solid #27272a; transition:all 0.3s ease; }
+        .kpi-card:hover { transform:translateY(-3px); border-color:#fbbf24; }
+        .kpi-number { font-family:'Space Grotesk', sans-serif; font-size:2.4rem; font-weight:600; letter-spacing:-0.03em; }
+        .glass { background:rgba(255,255,255,0.04); backdrop-filter:blur(20px); }
+        .live-dot { animation:pulse 2s infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        
-        table th { font-size: 0.75rem; letter-spacing: 0.5px; }
-        .delete-btn:hover { color: #ef4444; }
     </style>
 </head>
 <body class="min-h-screen flex">
@@ -76,24 +53,24 @@
         <!-- KPIs -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <div class="kpi-card rounded-3xl p-6">
-                <p class="text-emerald-400 text-xs font-medium tracking-widest">RESERVAS HOY</p>
+                <p class="text-emerald-400 text-xs tracking-widest">RESERVAS HOY</p>
                 <p id="kpi-reservas-hoy" class="kpi-number text-white mt-2">0</p>
             </div>
             <div class="kpi-card rounded-3xl p-6">
-                <p class="text-amber-400 text-xs font-medium tracking-widest">INGRESOS HOY</p>
+                <p class="text-amber-400 text-xs tracking-widest">INGRESOS HOY</p>
                 <p id="kpi-ingresos" class="kpi-number text-amber-400 mt-2">$0</p>
             </div>
             <div class="kpi-card rounded-3xl p-6">
-                <p class="text-white text-xs font-medium tracking-widest">YATE MÁS RESERVADO</p>
+                <p class="text-white text-xs tracking-widest">YATE MÁS RESERVADO</p>
                 <p id="kpi-yate-popular" class="kpi-number text-white mt-2">—</p>
             </div>
             <div class="kpi-card rounded-3xl p-6">
-                <p class="text-sky-400 text-xs font-medium tracking-widest">OCUPACIÓN</p>
+                <p class="text-sky-400 text-xs tracking-widest">OCUPACIÓN</p>
                 <p id="kpi-ocupacion" class="kpi-number text-emerald-400 mt-2">0%</p>
             </div>
         </div>
 
-        <!-- Filtros y Gráficos -->
+        <!-- Filtros + Gráficos -->
         <div class="glass border border-white/10 rounded-3xl p-8 mb-8">
             <div class="flex flex-wrap gap-4 items-end mb-8">
                 <div>
@@ -148,7 +125,6 @@
     </div>
 
     <script>
-        // === FIREBASE CONFIG ===
         const firebaseConfig = {
             apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
             authDomain: "elite-yacht-rentals.firebaseapp.com",
@@ -179,11 +155,11 @@
             const hoy = todayText();
             const hoyData = data.filter(r => r.fecha === hoy);
             document.getElementById('kpi-reservas-hoy').textContent = hoyData.length;
-            
+
             let ingresos = 0;
             hoyData.forEach(r => ingresos += PRECIOS[r.yate] || 8500);
             document.getElementById('kpi-ingresos').textContent = '$' + ingresos.toLocaleString('es-MX');
-            
+
             const conteo = {};
             data.forEach(r => conteo[r.yate] = (conteo[r.yate]||0) + 1);
             let max = 0, popular = "—";
@@ -201,15 +177,14 @@
                     <td class="px-8 py-5">${r.nombreCliente || r.nombre || '-'}</td>
                     <td class="px-8 py-5">${r.fechaCumpleanos || '-'}</td>
                     <td class="px-8 py-5 text-center flex items-center justify-center gap-4">
-                        <button onclick="agregarAGoogleCalendar('${r.yate||''}','${r.fecha||''}','${r.hora||''}')" class="text-emerald-400 hover:text-emerald-300 text-lg">📅</button>
-                        <button onclick="borrarReserva('${r.id}')" class="delete-btn text-red-400 hover:text-red-500 text-xl">🗑️</button>
+                        <button onclick="agregarAGoogleCalendar('${r.yate||''}','${r.fecha||''}','${r.hora||''}')" class="text-emerald-400 hover:text-emerald-300">📅</button>
+                        <button onclick="borrarReserva('${r.id}')" class="text-red-400 hover:text-red-500 text-xl">🗑️</button>
                     </td>
                 </tr>
             `).join('');
         }
 
         function renderCharts(data) {
-            // Bar Chart
             if (barChartInstance) barChartInstance.destroy();
             const grouped = {};
             data.forEach(r => grouped[r.fecha] = (grouped[r.fecha]||0) + 1);
@@ -219,33 +194,86 @@
             barChartInstance = new Chart(document.getElementById('barChart'), {
                 type: 'bar',
                 data: { labels, datasets:[{ label:'Reservas', data:values, backgroundColor:'#fbbf24', borderColor:'#f59e0b', borderWidth:1, borderRadius:6 }] },
-                options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{grid:{color:'rgba(255,255,255,0.08)'}, ticks:{color:'#888', font:{size:11}}}, x:{grid:{color:'rgba(255,255,255,0.08)'}, ticks:{color:'#888', font:{size:11}}}} }
+                options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{grid:{color:'rgba(255,255,255,0.08)'}, ticks:{color:'#888'}}, x:{grid:{color:'rgba(255,255,255,0.08)'}, ticks:{color:'#888'}} }}
             });
 
-            // Pie Chart
             if (pieChartInstance) pieChartInstance.destroy();
             const conteoYates = {};
             data.forEach(r => conteoYates[r.yate] = (conteoYates[r.yate]||0) + 1);
 
             pieChartInstance = new Chart(document.getElementById('pieChart'), {
                 type: 'pie',
-                data: {
-                    labels: Object.keys(conteoYates),
-                    datasets: [{ data: Object.values(conteoYates), backgroundColor: ['#fbbf24','#f59e0b','#d97706','#b45309'], borderColor:'#111113', borderWidth:3 }]
-                },
-                options: { responsive:true, plugins:{legend:{position:'bottom', labels:{color:'#ddd', boxWidth:12, padding:18, font:{size:13}}}}}
+                data: { labels: Object.keys(conteoYates), datasets:[{ data: Object.values(conteoYates), backgroundColor: ['#fbbf24','#f59e0b','#d97706','#b45309'], borderColor:'#111113', borderWidth:3 }] },
+                options: { responsive:true, plugins:{legend:{position:'bottom', labels:{color:'#ddd', boxWidth:12, padding:18}}}}
             });
         }
 
-        // Filtros, CSV, borrar, etc. (mismo código funcional anterior)
-        function applyFilters() { /* ... mismo que antes */ }
-        function resetFilters() { /* ... mismo que antes */ }
-        function exportarCSV() { /* ... mismo que antes */ }
-        async function borrarReserva(id) { /* ... mismo que antes */ }
-        async function borrarTodasLasReservas() { /* ... mismo que antes */ }
-        function cargarReservasAdmin() { /* ... mismo que antes */ }
+        function applyFilters() {
+            const desde = desdePicker.selectedDates[0];
+            const hasta = hastaPicker.selectedDates[0];
+            let filtered = allReservas;
+            if (desde) filtered = filtered.filter(r => new Date(r.fecha.split(' ').reverse().join('-')) >= desde);
+            if (hasta) filtered = filtered.filter(r => new Date(r.fecha.split(' ').reverse().join('-')) <= hasta);
+            calcularKPIs(filtered);
+            renderTable(filtered);
+            renderCharts(filtered);
+        }
+
+        function resetFilters() {
+            desdePicker.clear();
+            hastaPicker.clear();
+            applyFilters();
+        }
+
+        function exportarCSV() {
+            let csv = "Yate,Fecha,Hora,Cliente,Cumpleaños,Telefono\n";
+            allReservas.forEach(r => {
+                csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${r.nombreCliente||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`;
+            });
+            const blob = new Blob([csv], {type: 'text/csv'});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `reservas_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+
+        async function borrarReserva(id) {
+            if (!confirm("¿Eliminar esta reserva?")) return;
+            try {
+                await db.collection('reservas').doc(id).delete();
+            } catch (e) {
+                alert("Error al eliminar la reserva");
+            }
+        }
+
+        async function borrarTodasLasReservas() {
+            if (!confirm("¿Borrar TODAS las reservas?")) return;
+            if (!confirm("Esta acción es irreversible. ¿Confirmas?")) return;
+            const batch = db.batch();
+            const snapshot = await db.collection("reservas").get();
+            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+        }
+
+        function cargarReservasAdmin() {
+            db.collection("reservas").onSnapshot(snapshot => {
+                allReservas = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                calcularKPIs(allReservas);
+                renderTable(allReservas);
+                renderCharts(allReservas);
+            });
+        }
+
         function logout() { auth.signOut().then(() => location.reload()); }
-        function agregarAGoogleCalendar(yate, fecha, hora) { /* ... mismo que antes */ }
+
+        function agregarAGoogleCalendar(yate, fecha, hora) {
+            if (!fecha) return;
+            const fechaISO = fecha.split(' ').reverse().join('-');
+            const start = `${fechaISO}T${hora}:00`;
+            const end = `${fechaISO}T${hora.split(':')[0]}:${parseInt(hora.split(':')[1])+2}:00`;
+            const link = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Reserva Elite - ' + yate)}&dates=${start.replace(/[:-]/g,'')}/${end.replace(/[:-]/g,'')}`;
+            window.open(link, '_blank');
+        }
 
         auth.onAuthStateChanged(user => { if (user) cargarReservasAdmin(); });
 
