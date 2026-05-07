@@ -26,7 +26,12 @@
         .glass { background:rgba(255,255,255,0.04); backdrop-filter:blur(20px); }
         .live-dot { animation:pulse 2s infinite; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        table { font-size: 0.95rem; }
+        
+        /* Ajuste específico para gráficos en móvil */
+        .chart-container { height: 240px; }
+        @media (min-width: 1024px) {
+            .chart-container { height: 280px; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex" x-data="adminApp()">
@@ -66,8 +71,6 @@
 
             <!-- DASHBOARD -->
             <div :class="{ 'hidden': !isLoggedIn }">
-                <h1 class="text-3xl font-semibold tracking-tight mb-8 hidden lg:block">Panel de Administración</h1>
-
                 <!-- KPIs -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
                     <div class="kpi-card rounded-3xl p-6">
@@ -88,16 +91,20 @@
                     </div>
                 </div>
 
-                <!-- Gráficos -->
+                <!-- Gráficos (ajustados para móvil) -->
                 <div class="glass border border-white/10 rounded-3xl p-6 md:p-8 mb-8">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div>
                             <h3 class="text-xs font-medium text-slate-400 mb-4">Reservas por día</h3>
-                            <canvas id="barChart" class="w-full h-64"></canvas>
+                            <div class="chart-container">
+                                <canvas id="barChart" class="w-full h-full"></canvas>
+                            </div>
                         </div>
                         <div>
                             <h3 class="text-xs font-medium text-slate-400 mb-4">Distribución por yate</h3>
-                            <canvas id="pieChart" class="w-full h-64"></canvas>
+                            <div class="chart-container">
+                                <canvas id="pieChart" class="w-full h-full"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
