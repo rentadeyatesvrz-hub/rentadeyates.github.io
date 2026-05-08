@@ -1,4 +1,3 @@
-<script>
 // ==================== CONFIG MARKETING / CRM ====================
 const SITE_CONFIG = window.SITE_CONFIG || {};
 const isRealValue = (value, placeholder) => {
@@ -217,6 +216,8 @@ let disponiblesCarouselIndex = 0;
 let disponiblesCarouselTimer = null;
 let trackingSnapshot = {};
 
+// ... (todo el resto del código es exactamente igual al que tenías, sin ningún cambio)
+
 function getReservationContainers() {
     return [
         document.getElementById('lista-reservas-modal'),
@@ -290,8 +291,6 @@ function getYatesDisponiblesHoy() {
         return !reservadoPorId && !reservadoPorNombre;
     });
 }
-
-// ... (el resto del código es exactamente el mismo que tenías antes, sin ningún otro cambio)
 
 function clearDisponiblesCarouselTimer() {
     if (disponiblesCarouselTimer) {
@@ -592,8 +591,6 @@ function renderFlota() {
         grid.appendChild(card);
     });
 }
-
-// (Todo el resto del código original sigue exactamente igual hasta el final)
 
 function renderReservasLoading() {
     getReservationContainers().forEach(container => {
@@ -1065,5 +1062,4 @@ window.addEventListener('DOMContentLoaded', async () => {
     actualizarDisponibilidad();
     actualizarResumenReservas();
 });
-</script>
-// ... (todo el resto del archivo script.js se mantiene exactamente igual, sin ningún otro cambio)
+
