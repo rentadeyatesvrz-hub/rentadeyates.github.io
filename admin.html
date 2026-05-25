@@ -416,6 +416,82 @@
 
                 </div>
 
+                <!-- MARKETING CAMPAIGNS & TRACKERS PERFORMANCE PANEL -->
+                <div class="glass-panel rounded-3xl p-6 space-y-6 shadow-2xl">
+                    <div class="flex items-center justify-between pb-3 border-b border-white/5">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-1.5 h-4 bg-purple-400 rounded-full"></span>
+                            <h3 class="text-sm font-bold tracking-wider text-slate-300 uppercase font-display">📣 Rendimiento de Campañas Ads & Origen de Tráfico</h3>
+                        </div>
+                        <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Trackers Integrados (UTM, Gclid, Fbclid)</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <!-- Google Ads Card -->
+                        <div class="glass-card-interactive rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between h-[150px]">
+                            <div class="absolute top-4 right-4 text-amber-400/20">
+                                <span class="text-2xl">🔍</span>
+                            </div>
+                            <div>
+                                <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Google Ads (SEM)</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Campañas de búsqueda y display</p>
+                            </div>
+                            <div class="flex items-end justify-between mt-2">
+                                <div>
+                                    <span class="text-3xl font-bold font-display text-white" x-text="mktGoogleAds">0</span>
+                                    <span class="text-xs text-slate-400 font-semibold ml-1">prospectos</span>
+                                </div>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-400/10 text-amber-300 font-bold border border-amber-400/15 text-[11px]" x-text="pctGoogleAds">0%</span>
+                            </div>
+                            <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
+                                <div class="bg-amber-400 h-full rounded-full transition-all duration-500" :style="{ width: pctGoogleAds }"></div>
+                            </div>
+                        </div>
+
+                        <!-- Facebook / Instagram Ads Card -->
+                        <div class="glass-card-interactive rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between h-[150px]">
+                            <div class="absolute top-4 right-4 text-purple-400/20">
+                                <span class="text-2xl">📱</span>
+                            </div>
+                            <div>
+                                <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Facebook & Instagram (Social Ads)</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Meta Ads Pixel & Campañas de redes</p>
+                            </div>
+                            <div class="flex items-end justify-between mt-2">
+                                <div>
+                                    <span class="text-3xl font-bold font-display text-white" x-text="mktSocialAds">0</span>
+                                    <span class="text-xs text-slate-400 font-semibold ml-1">prospectos</span>
+                                </div>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-400/10 text-purple-300 font-bold border border-purple-400/15 text-[11px]" x-text="pctSocialAds">0%</span>
+                            </div>
+                            <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
+                                <div class="bg-gradient-to-r from-purple-400 to-pink-500 h-full rounded-full transition-all duration-500" :style="{ width: pctSocialAds }"></div>
+                            </div>
+                        </div>
+
+                        <!-- Organic / Direct Web Card -->
+                        <div class="glass-card-interactive rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between h-[150px]">
+                            <div class="absolute top-4 right-4 text-emerald-400/20">
+                                <span class="text-2xl">🌐</span>
+                            </div>
+                            <div>
+                                <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Directo / Búsqueda Orgánica</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Tráfico directo y motores de búsqueda</p>
+                            </div>
+                            <div class="flex items-end justify-between mt-2">
+                                <div>
+                                    <span class="text-3xl font-bold font-display text-white" x-text="mktOrganicDirect">0</span>
+                                    <span class="text-xs text-slate-400 font-semibold ml-1">prospectos</span>
+                                </div>
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-400/10 text-emerald-300 font-bold border border-emerald-500/15 text-[11px]" x-text="pctOrganicDirect">0%</span>
+                            </div>
+                            <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
+                                <div class="bg-emerald-400 h-full rounded-full transition-all duration-500" :style="{ width: pctOrganicDirect }"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- DYNAMIC DATA TABLE PANEL -->
                 <section id="reservas-section" class="glass-panel rounded-3xl overflow-hidden shadow-2xl">
                     
@@ -477,6 +553,14 @@
                 kpiIngresosHoy: '$0',
                 kpiYatePopular: '—',
                 kpiOcupacion: '0%',
+
+                // Marketing tracking variables
+                mktGoogleAds: 0,
+                mktSocialAds: 0,
+                mktOrganicDirect: 0,
+                pctGoogleAds: '0%',
+                pctSocialAds: '0%',
+                pctOrganicDirect: '0%',
 
                 init() {
                     // Expose dynamic helper methods to window scope for native inline onclick triggers
@@ -560,6 +644,44 @@
                     });
                     this.kpiYatePopular = popular;
                     this.kpiOcupacion = Math.min(Math.round((this.allReservas.length / 16) * 100), 100) + '%';
+
+                    // Parse marketing channels from live database parameters
+                    let googleAdsCount = 0;
+                    let socialAdsCount = 0;
+                    let organicDirectCount = 0;
+
+                    this.allReservas.forEach(r => {
+                        const tracking = r.tracking || (r.crm && r.crm.tracking) || {};
+                        const source = String(tracking.utm_source || '').toLowerCase();
+                        const medium = String(tracking.utm_medium || '').toLowerCase();
+                        const referrer = String(r.referrer || (r.crm && r.crm.referrer) || '').toLowerCase();
+
+                        const isGoogleAds = tracking.gclid || source.includes('google') || medium.includes('cpc');
+                        const isSocialAds = tracking.fbclid || 
+                                            source.includes('facebook') || source.includes('instagram') || source.includes('ig') ||
+                                            medium.includes('social') || medium.includes('instagram') || medium.includes('facebook');
+
+                        if (isGoogleAds) {
+                            googleAdsCount++;
+                        } else if (isSocialAds) {
+                            socialAdsCount++;
+                        } else {
+                            if (referrer.includes('facebook.com') || referrer.includes('instagram.com') || referrer.includes('t.co') || referrer.includes('lnkd.in')) {
+                                socialAdsCount++;
+                            } else {
+                                organicDirectCount++;
+                            }
+                        }
+                    });
+
+                    this.mktGoogleAds = googleAdsCount;
+                    this.mktSocialAds = socialAdsCount;
+                    this.mktOrganicDirect = organicDirectCount;
+
+                    const mktTotal = googleAdsCount + socialAdsCount + organicDirectCount || 1;
+                    this.pctGoogleAds = Math.round((googleAdsCount / mktTotal) * 100) + '%';
+                    this.pctSocialAds = Math.round((socialAdsCount / mktTotal) * 100) + '%';
+                    this.pctOrganicDirect = Math.round((organicDirectCount / mktTotal) * 100) + '%';
                 },
 
                 renderTable() {
