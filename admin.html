@@ -490,6 +490,82 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- CHATBOT MIA INTERACTIVE LEAD ORIGINS ROW -->
+                    <div class="border-t border-white/5 pt-6 space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-white/5">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-1.5 h-4 bg-pink-500 rounded-full"></span>
+                                <h3 class="text-sm font-bold tracking-wider text-slate-300 uppercase font-display">🤖 Prospectos Asistidos por Chatbot Mía (Botpress)</h3>
+                            </div>
+                            <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Integraciones de Asistente IA</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <!-- Mía Webchat -->
+                            <div class="glass-card-interactive rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between h-[150px]">
+                                <div class="absolute top-4 right-4 text-sky-400/20">
+                                    <span class="text-2xl">💬</span>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase font-display">Mía en la Web</p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Asistente IA en el sitio web oficial</p>
+                                </div>
+                                <div class="flex items-end justify-between mt-2">
+                                    <div>
+                                        <span class="text-3xl font-bold font-display text-white" x-text="mktChatbotWeb">0</span>
+                                        <span class="text-xs text-slate-400 font-semibold ml-1">leads</span>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-sky-400/10 text-sky-300 font-bold border border-sky-400/15 text-[11px]" x-text="pctChatbotWeb">0%</span>
+                                </div>
+                                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
+                                    <div class="bg-sky-400 h-full rounded-full transition-all duration-500" :style="{ width: pctChatbotWeb }"></div>
+                                </div>
+                            </div>
+
+                            <!-- Mía FB Messenger -->
+                            <div class="glass-card-interactive rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between h-[150px]">
+                                <div class="absolute top-4 right-4 text-blue-400/20">
+                                    <span class="text-2xl">👥</span>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase font-display">Mía en Facebook</p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Asistente IA en FB Messenger</p>
+                                </div>
+                                <div class="flex items-end justify-between mt-2">
+                                    <div>
+                                        <span class="text-3xl font-bold font-display text-white" x-text="mktChatbotFB">0</span>
+                                        <span class="text-xs text-slate-400 font-semibold ml-1">leads</span>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-400 font-bold border border-blue-500/15 text-[11px]" x-text="pctChatbotFB">0%</span>
+                                </div>
+                                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
+                                    <div class="bg-blue-500 h-full rounded-full transition-all duration-500" :style="{ width: pctChatbotFB }"></div>
+                                </div>
+                            </div>
+
+                            <!-- Mía Instagram -->
+                            <div class="glass-card-interactive rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between h-[150px]">
+                                <div class="absolute top-4 right-4 text-pink-500/20">
+                                    <span class="text-2xl">📸</span>
+                                </div>
+                                <div>
+                                    <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase font-display">Mía en Instagram</p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">Asistente IA en Mensajes Directos</p>
+                                </div>
+                                <div class="flex items-end justify-between mt-2">
+                                    <div>
+                                        <span class="text-3xl font-bold font-display text-white" x-text="mktChatbotIG">0</span>
+                                        <span class="text-xs text-slate-400 font-semibold ml-1">leads</span>
+                                    </div>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-gradient-to-tr from-amber-500/10 via-red-500/10 to-pink-500/10 text-pink-300 font-bold border border-pink-500/15 text-[11px]" x-text="pctChatbotIG">0%</span>
+                                </div>
+                                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
+                                    <div class="bg-gradient-to-r from-amber-400 via-red-500 to-pink-500 h-full rounded-full transition-all duration-500" :style="{ width: pctChatbotIG }"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- DYNAMIC DATA TABLE PANEL -->
@@ -561,6 +637,14 @@
                 pctGoogleAds: '0%',
                 pctSocialAds: '0%',
                 pctOrganicDirect: '0%',
+
+                // Chatbot Mía tracking variables
+                mktChatbotWeb: 0,
+                mktChatbotFB: 0,
+                mktChatbotIG: 0,
+                pctChatbotWeb: '0%',
+                pctChatbotFB: '0%',
+                pctChatbotIG: '0%',
 
                 init() {
                     // Expose dynamic helper methods to window scope for native inline onclick triggers
@@ -682,6 +766,40 @@
                     this.pctGoogleAds = Math.round((googleAdsCount / mktTotal) * 100) + '%';
                     this.pctSocialAds = Math.round((socialAdsCount / mktTotal) * 100) + '%';
                     this.pctOrganicDirect = Math.round((organicDirectCount / mktTotal) * 100) + '%';
+
+                    // Parse chatbot Mía interactions (Botpress channels: Web, FB, IG)
+                    let chatbotWebCount = 0;
+                    let chatbotFBCount = 0;
+                    let chatbotIGCount = 0;
+
+                    this.allReservas.forEach(r => {
+                        const src = String(r.source || (r.crm && r.crm.source) || '').toLowerCase();
+                        const ch = String(r.channel || (r.crm && r.crm.channel) || '').toLowerCase();
+                        
+                        const isChatbot = src.includes('botpress') || src.includes('mia') || src.includes('bot') || 
+                                          ch.includes('botpress') || ch.includes('mia') || ch.includes('chat') ||
+                                          String(r.via || '').toLowerCase().includes('bot') ||
+                                          String(r.via || '').toLowerCase().includes('mia');
+
+                        if (isChatbot) {
+                            if (ch.includes('instagram') || ch.includes('ig') || src.includes('instagram') || src.includes('ig')) {
+                                chatbotIGCount++;
+                            } else if (ch.includes('facebook') || ch.includes('fb') || ch.includes('messenger') || src.includes('facebook') || src.includes('fb') || src.includes('messenger')) {
+                                chatbotFBCount++;
+                            } else {
+                                chatbotWebCount++;
+                            }
+                        }
+                    });
+
+                    this.mktChatbotWeb = chatbotWebCount;
+                    this.mktChatbotFB = chatbotFBCount;
+                    this.mktChatbotIG = chatbotIGCount;
+
+                    const botTotal = chatbotWebCount + chatbotFBCount + chatbotIGCount || 1;
+                    this.pctChatbotWeb = Math.round((chatbotWebCount / botTotal) * 100) + '%';
+                    this.pctChatbotFB = Math.round((chatbotFBCount / botTotal) * 100) + '%';
+                    this.pctChatbotIG = Math.round((chatbotIGCount / botTotal) * 100) + '%';
                 },
 
                 renderTable() {
