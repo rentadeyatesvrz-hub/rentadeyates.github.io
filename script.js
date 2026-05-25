@@ -559,7 +559,7 @@ function renderFlota() {
         card.innerHTML = `
             <div class="fleet-media h-72">
                 <span class="fleet-tag">${escapeHtml(y.tipo)}</span>
-                <img src="${y.img}" alt="${escapeHtml(y.nombre)}" class="w-full h-full object-cover">
+                <img src="${y.img}" alt="Renta de ${escapeHtml(y.tipo)} ${escapeHtml(y.nombre)} en Veracruz" class="w-full h-full object-cover">
             </div>
             <div class="p-5 sm:p-6">
                 <div class="flex items-start justify-between gap-4">
