@@ -668,6 +668,7 @@
                         if (user) {
                             this.isLoggedIn = true;
                             this.cargarReservasAdmin(db);
+                            this.solicitarPermisoNotificaciones();
                         }
                     });
                 },
@@ -684,12 +685,88 @@
                     firebase.auth().signOut().then(() => location.reload());
                 },
 
+                solicitarPermisoNotificaciones() {
+                    if ('Notification' in window) {
+                        if (Notification.permission === 'default') {
+                            Notification.requestPermission();
+                        }
+                    }
+                },
+
+                playNewBookingSound() {
+                    try {
+                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        const now = audioCtx.currentTime;
+                        
+                        // Primer tono (campana alta corta)
+                        const osc1 = audioCtx.createOscillator();
+                        const gain1 = audioCtx.createGain();
+                        osc1.type = 'sine';
+                        osc1.frequency.setValueAtTime(587.33, now); // Re5 (D5)
+                        gain1.gain.setValueAtTime(0.25, now);
+                        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                        osc1.connect(gain1);
+                        gain1.connect(audioCtx.destination);
+                        osc1.start(now);
+                        osc1.stop(now + 0.8);
+                        
+                        // Segundo tono armónico retrasado (sensación de campana premium)
+                        const osc2 = audioCtx.createOscillator();
+                        const gain2 = audioCtx.createGain();
+                        osc2.type = 'sine';
+                        osc2.frequency.setValueAtTime(880.00, now + 0.12); // La5 (A5)
+                        gain2.gain.setValueAtTime(0.25, now + 0.12);
+                        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.92);
+                        osc2.connect(gain2);
+                        gain2.connect(audioCtx.destination);
+                        osc2.start(now + 0.12);
+                        osc2.stop(now + 0.92);
+                    } catch (e) {
+                        console.error("No se pudo reproducir el sonido de alerta:", e);
+                    }
+                },
+
+                showLocalNotification(reserva) {
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        const title = "⛵ ¡Nueva Reserva Recibida!";
+                        const canalText = String(reserva.channel || 'webchat').toLowerCase() === 'facebook' ? 'Mía en Facebook 🔵' : 
+                                          String(reserva.channel || 'webchat').toLowerCase() === 'instagram' ? 'Mía en Instagram 🌸' : 'Formulario Web 🌐';
+                        
+                        const options = {
+                            body: `${reserva.nombreCliente || 'Cliente'} reservó ${reserva.yate || 'embarcación'} para el ${reserva.fecha || ''} a las ${reserva.hora || ''} vía ${canalText}.`,
+                            icon: "icon-192.png",
+                            badge: "icon-192.png",
+                            vibrate: [200, 100, 200],
+                            requireInteraction: true
+                        };
+                        new Notification(title, options);
+                    }
+                },
+
                 cargarReservasAdmin(db) {
+                    let isInitialLoad = true;
                     db.collection("reservas").onSnapshot(snapshot => {
                         this.allReservas = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                        
+                        let hasNewChanges = false;
+                        let lastDoc = null;
+                        
+                        snapshot.docChanges().forEach(change => {
+                            if (change.type === "added" && !isInitialLoad) {
+                                hasNewChanges = true;
+                                lastDoc = change.doc.data();
+                            }
+                        });
+                        
+                        isInitialLoad = false;
                         this.calcularKPIs();
                         this.renderTable();
                         this.renderCharts();
+                         
+                        if (hasNewChanges && lastDoc) {
+                             this.playNewBookingSound();
+                             this.showLocalNotification(lastDoc);
+                        }
                     });
                 },
 
