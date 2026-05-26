@@ -652,6 +652,13 @@
                     window.borrarReserva = (id) => this.borrarReserva(id);
                     window.agregarAGoogleCalendar = (yate, fecha, hora) => this.agregarAGoogleCalendar(yate, fecha, hora);
 
+                    // Registrar Service Worker para PWA y soporte de notificaciones push en el móvil
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('service-worker.js')
+                            .then(reg => console.log('Service Worker registrado con éxito:', reg))
+                            .catch(err => console.error('Error al registrar el Service Worker:', err));
+                    }
+
                     const firebaseConfig = {
                         apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
                         authDomain: "elite-yacht-rentals.firebaseapp.com",
@@ -740,7 +747,17 @@
                             vibrate: [200, 100, 200],
                             requireInteraction: true
                         };
-                        new Notification(title, options);
+                        
+                        if ('serviceWorker' in navigator) {
+                            navigator.serviceWorker.ready.then(reg => {
+                                reg.showNotification(title, options);
+                            }).catch(err => {
+                                console.error("Error con notificación de SW, usando fallback:", err);
+                                new Notification(title, options);
+                            });
+                        } else {
+                            new Notification(title, options);
+                        }
                     }
                 },
 
