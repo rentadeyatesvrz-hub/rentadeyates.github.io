@@ -197,7 +197,7 @@ const db = firebase.firestore();
 const yates = [
     { id: 1, nombre: "La Gozadera", tipo: "Lancha", precio: "MX$9,000/8h", capacidad: "Hasta 7 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1776209301902-7da8b91f85d9?q=80&w=586&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
     { id: 2, nombre: "La Pachanga", tipo: "Lancha", precio: "MX$10,500/8h", capacidad: "Hasta 7 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1776215340109-2a5f8e02e9ee?q=80&w=324&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-    { id: 3, nombre: "Monky", tipo: "Lancha", precio: "MX$8,000/8h", capacidad: "10 personas", img: "https://images.unsplash.com/photo-1777789777463-01635c7ed8aa?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { id: 3, nombre: "Monky", tipo: "Lancha", precio: "MX$8,000/8h", capacidad: "10 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1777789777463-01635c7ed8aa?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
     { id: 4, nombre: "Percales", tipo: "Lancha", precio: "MX$3,500xh ò MX$16,000/6h", capacidad: "12 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1776208903634-4aab68769156?q=80&w=1022&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
     { id: 5, nombre: "Patrik", tipo: "Lancha", precio: "MX$8,500/8h", capacidad: "Hasta 7 personas", incluye: "Capitán,Dos Bolsas de Hielo,Coca-Cola 2L,Combustible,12 Cerveza,Agua Mineral 2L", img: "https://images.unsplash.com/photo-1778220290071-a2913c39947c?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" }
 ];
@@ -776,9 +776,27 @@ function setLoadingState(isLoading) {
     btn.textContent = isLoading ? 'Confirmando...' : 'Confirmar Reserva';
 }
 
+function getMarinaInfo(yateId) {
+    const id = Number(yateId);
+    if (id === 3 || id === 5) {
+        return {
+            nombre: "Marina Estero 42 (Isla del Amor)",
+            ubicacion: "Estero 42, Isla del Amor, Boca del Río / Alvarado, Ver.",
+            mapLink: "https://maps.app.goo.gl/w5t29D698mR2Z8x9A"
+        };
+    } else {
+        return {
+            nombre: "Marina El Dorado",
+            ubicacion: "Blvrd El Dorado 2, Boca del Río / Alvarado, Ver. (Plaza El Dorado)",
+            mapLink: "https://maps.app.goo.gl/tBwJgV3D4f1B9Z1A6"
+        };
+    }
+}
+
 async function realizarReserva() {
     const nombreCliente = (document.getElementById('nombre-cliente')?.value || '').trim();
     const telefono = (document.getElementById('telefono-cliente')?.value || '').trim();
+    const correoCliente = (document.getElementById('correo-cliente')?.value || '').trim();
     const reservaTexto = (document.getElementById('reserva-textbox')?.value || '').trim();
     const fechaCumpleanos = document.getElementById('fecha-cumpleanos')?.value || '';
     const yateId = parseInt(document.getElementById('select-yate').value, 10);
@@ -792,6 +810,19 @@ async function realizarReserva() {
 
     if (normalizePhoneForWhatsApp(telefono).length < 10) {
         showToast('Ingresa un número de contacto válido.', 'error');
+        return;
+    }
+
+    const validateEmail = (email) => {
+        return String(email)
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    };
+
+    if (!correoCliente || !validateEmail(correoCliente)) {
+        showToast('Ingresa un correo electrónico válido para recibir tus instrucciones.', 'error');
         return;
     }
 
@@ -835,6 +866,7 @@ async function realizarReserva() {
             reservationId: reservaRef.id,
             nombreCliente,
             telefono,
+            correoCliente,
             fechaCumpleanos,
             reserva: embarcacionReservada,
             embarcacionReservada,
@@ -860,6 +892,169 @@ async function realizarReserva() {
 
         await reservaRef.set(payload);
 
+        // --- SISTEMA AUTOMÁTICO DE CORREOS (Firestore /mail collection trigger) ---
+        const marina = getMarinaInfo(yateId);
+        const siteUrl = window.location.origin || 'https://rentayatesveracruz.mx';
+        const inclList = yate.incluye ? yate.incluye.split(',').map(i => i.trim()).filter(Boolean) : [];
+        const includesHtml = inclList.map(inc => `
+            <li style="margin-bottom: 6px; color: #d4d4d8; font-size: 14px;">
+                <span style="color: #fbbf24; margin-right: 8px;">✦</span> ${inc}
+            </li>
+        `).join('');
+
+        const emailHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Confirmación de Reserva • Elite Yacht Rentals</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #020617; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #f4f4f5; -webkit-text-size-adjust: 100%;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #020617; padding: 20px 10px;">
+                    <tr>
+                        <td align="center">
+                            <!-- Main Container Card -->
+                            <table width="100%" class="container" style="max-width: 600px; background-color: #09090b; border: 1px solid #27272a; border-radius: 24px; overflow: hidden; border-collapse: separate;">
+                                <!-- Header Logo / Brand -->
+                                <tr>
+                                    <td align="center" style="padding: 30px 20px; background-color: #09090b; border-bottom: 1px solid #18181b;">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td align="center" style="font-size: 26px; font-weight: bold; letter-spacing: 4px; color: #ffffff; text-transform: uppercase;">
+                                                    ⛵ ELITE YACHT
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="center" style="font-size: 10px; letter-spacing: 6px; color: #fbbf24; text-transform: uppercase; padding-top: 4px; font-weight: 600;">
+                                                    Rentals • Veracruz
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Hero Image Block -->
+                                <tr>
+                                    <td style="padding: 0;">
+                                        <img src="${yate.img}" alt="${embarcacionReservada}" width="100%" style="display: block; width: 100%; max-height: 280px; object-fit: cover; border-bottom: 1px solid #27272a;">
+                                    </td>
+                                </tr>
+
+                                <!-- Welcome Text -->
+                                <tr>
+                                    <td style="padding: 30px 24px 20px 24px;">
+                                        <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #ffffff; text-align: center;">
+                                            ¡Tu Aventura en el Mar te Espera!
+                                        </h1>
+                                        <p style="margin-top: 12px; margin-bottom: 0; font-size: 15px; color: #a1a1aa; line-height: 1.6; text-align: center;">
+                                            Hola <strong>${nombreCliente}</strong>, nos complace confirmar tu reserva premium. A continuación, encontrarás todos los detalles y las instrucciones exactas de tu embarque.
+                                        </p>
+                                    </td>
+                                </tr>
+
+                                <!-- Details Table Card -->
+                                <tr>
+                                    <td style="padding: 0 24px 20px 24px;">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="12" style="background-color: #18181b; border: 1px solid #27272a; border-radius: 16px;">
+                                            <tr>
+                                                <td width="35%" style="color: #a1a1aa; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Embarcación</td>
+                                                <td style="color: #ffffff; font-size: 15px; font-weight: bold;">${embarcacionReservada} (${yate.tipo})</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #a1a1aa; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Fecha Paseo</td>
+                                                <td style="color: #ffffff; font-size: 15px; font-weight: bold;">${fecha}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #a1a1aa; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Hora Salida</td>
+                                                <td style="color: #fbbf24; font-size: 15px; font-weight: bold;">${formatHourLabel(hora)} (Favor de llegar 15 min antes)</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                                <!-- Departure Marina (Google Maps Pin integration) -->
+                                <tr>
+                                    <td style="padding: 0 24px 25px 24px;">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="16" style="background-color: #1e1b4b; border: 1px solid #312e81; border-radius: 16px;">
+                                            <tr>
+                                                <td>
+                                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                        <tr>
+                                                            <td width="32" valign="top">
+                                                                <img src="${siteUrl}/pin-mapa.png" alt="Ubicación" width="24" height="24" style="display: block;">
+                                                            </td>
+                                                            <td style="padding-left: 10px;">
+                                                                <h3 style="margin: 0; font-size: 16px; color: #ffffff; font-weight: bold;">
+                                                                    Punto de Salida: ${marina.nombre}
+                                                                </h3>
+                                                                <p style="margin-top: 6px; margin-bottom: 12px; font-size: 13px; color: #c084fc; line-height: 1.5;">
+                                                                    ${marina.ubicacion}
+                                                                </p>
+                                                                <table border="0" cellspacing="0" cellpadding="0">
+                                                                    <tr>
+                                                                        <td style="background-color: #fbbf24; border-radius: 8px;">
+                                                                            <a href="${marina.mapLink}" target="_blank" style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #09090b; text-decoration: none; display: inline-block;">
+                                                                                📍 Abrir en Google Maps
+                                                                            </a>
+                                                                        </td>
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                                <!-- Inclusions List -->
+                                ${includesHtml ? `
+                                <tr>
+                                    <td style="padding: 0 24px 25px 24px;">
+                                        <h3 style="margin: 0 0 12px 0; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: #ffffff;">¿Qué incluye tu servicio?</h3>
+                                        <ul style="margin: 0; padding-left: 0; list-style-type: none;">
+                                            ${includesHtml}
+                                        </ul>
+                                    </td>
+                                </tr>
+                                ` : ''}
+
+                                <!-- Assistence / Human Contact Details -->
+                                <tr>
+                                    <td style="padding: 25px 24px; background-color: #18181b; border-top: 1px solid #27272a; text-align: center;">
+                                        <p style="margin: 0; font-size: 14px; color: #a1a1aa; line-height: 1.6;">
+                                            ¿Necesitas ayuda o hablar con un asesor humano? 👨‍✈️
+                                        </p>
+                                        <p style="margin-top: 8px; margin-bottom: 0; font-size: 15px; font-weight: bold;">
+                                            Contacto Directo: 
+                                            <a href="tel:+522295202785" style="color: #fbbf24; text-decoration: none; margin-left: 5px;">+52 229 520 2785</a>
+                                        </p>
+                                    </td>
+                                </tr>
+
+                                <!-- Footer Copyright -->
+                                <tr>
+                                    <td align="center" style="padding: 20px 24px; background-color: #09090b; font-size: 11px; color: #52525b; border-top: 1px solid #18181b;">
+                                        © 2026 Elite Yacht Rentals • Veracruz, México • Paseos de Lujo Privados
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        `;
+
+        await db.collection('mail').add({
+            to: correoCliente,
+            message: {
+                subject: `Confirmación de tu Reserva: ${embarcacionReservada} ⛵`,
+                html: emailHtml
+            }
+        });
+
         trackLeadEvent({
             value: 1,
             currency: 'MXN',
@@ -869,7 +1064,7 @@ async function realizarReserva() {
         hydrateWhatsAppLinks();
         document.getElementById('modal-whatsapp-link')?.setAttribute('href', payload.whatsappLink);
 
-        showToast(`Reserva confirmada para ${embarcacionReservada} a las ${formatHourLabel(hora)}.`, 'success');
+        showToast(`Reserva confirmada para ${embarcacionReservada} a las ${formatHourLabel(hora)}. Se envió la confirmación a tu correo.`, 'success');
         limpiarFormularioReserva();
         cerrarModal();
     } catch (error) {
@@ -972,6 +1167,7 @@ function abrirModal() {
 function limpiarFormularioReserva() {
     const nombre = document.getElementById('nombre-cliente');
     const telefono = document.getElementById('telefono-cliente');
+    const correo = document.getElementById('correo-cliente');
     const cumple = document.getElementById('fecha-cumpleanos');
     const select = document.getElementById('select-yate');
     const fecha = document.getElementById('fecha');
@@ -979,6 +1175,7 @@ function limpiarFormularioReserva() {
 
     if (nombre) nombre.value = '';
     if (telefono) telefono.value = '';
+    if (correo) correo.value = '';
     if (cumple) cumple.value = '';
     if (select) select.value = yateSeleccionado ? String(yateSeleccionado) : '';
     if (fecha) fecha.value = '';
