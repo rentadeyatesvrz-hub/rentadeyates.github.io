@@ -938,6 +938,10 @@
                             ? `<span class="text-xs text-slate-400 block mt-1 font-mono">${r.telefono}</span>` 
                             : '';
 
+                        const crmEmail = r.correoCliente 
+                            ? `<span class="text-xs text-amber-400/80 block mt-0.5 font-mono">${r.correoCliente}</span>` 
+                            : '';
+
                         return `
                             <tr class="hover:bg-white/[0.02] transition-colors">
                                 <td class="px-6 py-4.5 font-semibold text-white">${yateBadge}</td>
@@ -946,6 +950,7 @@
                                 <td class="px-6 py-4.5">
                                     <div class="text-slate-100 font-semibold">${r.nombreCliente || r.nombre || '-'}</div>
                                     ${crmPhone}
+                                    ${crmEmail}
                                 </td>
                                 <td class="px-6 py-4.5 text-slate-400 font-mono text-xs">${r.fechaCumpleanos || '-'}</td>
                                 <td class="px-6 py-4.5 text-center">
@@ -1266,9 +1271,9 @@
 
                 exportarCSV() {
                     let csv = "\uFEFF"; // UTF-8 BOM
-                    csv += "Yate/Lancha,Fecha,Hora,Cliente,Cumpleaños,Teléfono\n";
+                    csv += "Yate/Lancha,Fecha,Hora,Cliente,Email,Cumpleaños,Teléfono\n";
                     this.allReservas.forEach(r => {
-                        csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${r.nombreCliente||r.nombre||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`;
+                        csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${r.nombreCliente||r.nombre||''}","${r.correoCliente||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`;
                     });
                     const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
                     const link = document.createElement("a");
