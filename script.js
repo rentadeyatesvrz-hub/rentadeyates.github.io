@@ -796,7 +796,7 @@ function getMarinaInfo(yateId) {
 async function realizarReserva() {
     const nombreCliente = (document.getElementById('nombre-cliente')?.value || '').trim();
     const telefono = (document.getElementById('telefono-cliente')?.value || '').trim();
-    const correoCliente = (document.getElementById('correo-cliente')?.value || '').trim();
+    const correo = (document.getElementById('correo-cliente')?.value || '').trim();
     const reservaTexto = (document.getElementById('reserva-textbox')?.value || '').trim();
     const fechaCumpleanos = document.getElementById('fecha-cumpleanos')?.value || '';
     const yateId = parseInt(document.getElementById('select-yate').value, 10);
@@ -821,7 +821,7 @@ async function realizarReserva() {
             );
     };
 
-    if (!correoCliente || !validateEmail(correoCliente)) {
+    if (!correo || !validateEmail(correo)) {
         showToast('Ingresa un correo electrónico válido para recibir tus instrucciones.', 'error');
         return;
     }
@@ -866,7 +866,7 @@ async function realizarReserva() {
             reservationId: reservaRef.id,
             nombreCliente,
             telefono,
-            correoCliente,
+            correo,
             fechaCumpleanos,
             reserva: embarcacionReservada,
             embarcacionReservada,
@@ -1048,7 +1048,7 @@ async function realizarReserva() {
         `;
 
         await db.collection('mail').add({
-            to: correoCliente,
+            to: correo,
             message: {
                 subject: `Confirmación de tu Reserva: ${embarcacionReservada} ⛵`,
                 html: emailHtml
