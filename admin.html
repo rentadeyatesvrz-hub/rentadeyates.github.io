@@ -938,8 +938,8 @@
                             ? `<span class="text-xs text-slate-400 block mt-1 font-mono">${r.telefono}</span>` 
                             : '';
 
-                        const crmEmail = r.correoCliente 
-                            ? `<span class="text-xs text-amber-400/80 block mt-0.5 font-mono">${r.correoCliente}</span>` 
+                        const crmEmail = r.correo 
+                            ? `<span class="text-xs text-amber-400/80 block mt-0.5 font-mono">${r.correo}</span>` 
                             : '';
 
                         return `
@@ -1273,7 +1273,7 @@
                     let csv = "\uFEFF"; // UTF-8 BOM
                     csv += "Yate/Lancha,Fecha,Hora,Cliente,Email,Cumpleaños,Teléfono\n";
                     this.allReservas.forEach(r => {
-                        csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${r.nombreCliente||r.nombre||''}","${r.correoCliente||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`;
+                        csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${r.nombreCliente||r.nombre||''}","${r.correo||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`;
                     });
                     const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
                     const link = document.createElement("a");
