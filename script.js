@@ -1188,12 +1188,19 @@ function initFlatpickr() {
     if (fechaPicker) fechaPicker.destroy();
     if (cumpleanosPicker) cumpleanosPicker.destroy();
 
-    fechaPicker = flatpickr('#fecha', {
+    fechaPicker = flatpickr('#inline-calendar', {
+        inline: true,
         locale: 'es',
         minDate: 'today',
         dateFormat: 'd F Y',
-        disableMobile: true,
-        onChange: () => actualizarDisponibilidad(),
+        onChange: (selectedDates, dateStr) => {
+            const fechaInput = document.getElementById('fecha');
+            if (fechaInput) {
+                fechaInput.value = dateStr;
+            }
+            actualizarFleetPanel(dateStr);
+            actualizarDisponibilidad();
+        },
         onDayCreate: function(dObj, dStr, fp, dayElem) {
             const dateStr = fp.formatDate(dayElem.dateObj, 'd F Y');
             const today = new Date();
@@ -1203,9 +1210,6 @@ function initFlatpickr() {
 
             if (checkDate < today) return;
 
-            const yateSelect = document.getElementById('select-yate');
-            const yateId = yateSelect ? parseInt(yateSelect.value, 10) : NaN;
-
             // Obtener disponibilidad de la flota para esta fecha
             const reservedYatesIds = new Set();
             reservas.forEach(r => {
@@ -1214,33 +1218,36 @@ function initFlatpickr() {
                 }
             });
 
-            const disponiblesHoyYates = yates.filter(y => !reservedYatesIds.has(Number(y.id)));
-            const totalDisponibles = disponiblesHoyYates.length;
+            // Crear y agregar el contenedor de 5 puntos
+            const dotsContainer = document.createElement('div');
+            dotsContainer.className = 'day-dots-container';
 
-            let isReserved = false;
-            if (!isNaN(yateId) && yateId > 0) {
-                // Si hay yate seleccionado, el día se colorea rojo si el yate está reservado
-                isReserved = reservedYatesIds.has(Number(yateId));
-            } else {
-                // Si no hay yate seleccionado, se colorea rojo solo si toda la flota está ocupada (5/5)
-                isReserved = totalDisponibles === 0;
+            // Tenemos 5 lanchas con IDs de 1 a 5
+            for (let i = 1; i <= 5; i++) {
+                const dot = document.createElement('span');
+                const isReserved = reservedYatesIds.has(i);
+                dot.className = `day-dot ${isReserved ? 'dot-booked' : 'dot-free'}`;
+                dotsContainer.appendChild(dot);
             }
 
-            if (isReserved) {
+            dayElem.appendChild(dotsContainer);
+
+            const disponiblesHoyCount = yates.filter(y => !reservedYatesIds.has(Number(y.id))).length;
+
+            if (disponiblesHoyCount === 0) {
                 dayElem.classList.add('date-occupied');
                 dayElem.classList.remove('date-available');
+                dayElem.setAttribute('title', 'Todas las lanchas reservadas (5/5)');
             } else {
                 dayElem.classList.add('date-available');
                 dayElem.classList.remove('date-occupied');
-            }
-
-            // Añadir tooltips descriptivos para la versión de escritorio
-            if (totalDisponibles === 0) {
-                dayElem.setAttribute('title', 'Todas las lanchas reservadas (5/5)');
-            } else if (totalDisponibles === 1) {
-                dayElem.setAttribute('title', `Solo queda 1 lancha disponible: ${disponiblesHoyYates[0].nombre}`);
-            } else {
-                dayElem.setAttribute('title', `${totalDisponibles} lanchas disponibles: ${disponiblesHoyYates.map(y => y.nombre).join(', ')}`);
+                if (disponiblesHoyCount === 1) {
+                    const lastYachtName = yates.filter(y => !reservedYatesIds.has(Number(y.id)))[0]?.nombre || '';
+                    dayElem.setAttribute('title', `Solo queda 1 lancha disponible: ${lastYachtName}`);
+                } else {
+                    const freeNames = yates.filter(y => !reservedYatesIds.has(Number(y.id))).map(y => y.nombre).join(', ');
+                    dayElem.setAttribute('title', `${disponiblesHoyCount} lanchas disponibles: ${freeNames}`);
+                }
             }
         }
     });
@@ -1294,7 +1301,167 @@ function cerrarModal() {
 
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    document.body.classList.remove('modal-open');
+    
+    // Only remove modal-open if calendar modal is also closed
+    const calendarModal = document.getElementById('calendar-popup-modal');
+    if (!calendarModal || calendarModal.classList.contains('hidden')) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
+/* ==================== PREMIUM CALENDAR POP-UP HELPER FUNCTIONS ==================== */
+
+function abrirCalendarModal() {
+    const calendarModal = document.getElementById('calendar-popup-modal');
+    if (!calendarModal) return;
+
+    calendarModal.classList.remove('hidden');
+    calendarModal.classList.add('flex');
+    document.body.classList.add('modal-open');
+
+    // If there is already a date selected, highlight it and update panel
+    const fechaVal = document.getElementById('fecha')?.value || '';
+    if (fechaVal && fechaPicker) {
+        fechaPicker.setDate(fechaVal, false);
+        actualizarFleetPanel(fechaVal);
+    } else {
+        // Clear panel message
+        const panel = document.getElementById('fleet-availability-panel');
+        if (panel) {
+            panel.innerHTML = `
+                <div class="text-center py-10 text-slate-400">
+                    <span class="text-4xl block mb-3">📅</span>
+                    Elige una fecha del calendario para ver las lanchas y yates disponibles en tiempo real.
+                </div>
+            `;
+        }
+        const display = document.getElementById('selected-date-display');
+        if (display) display.textContent = 'Selecciona un día';
+    }
+    
+    if (fechaPicker) {
+        fechaPicker.redraw();
+    }
+}
+
+function cerrarCalendarModal() {
+    const calendarModal = document.getElementById('calendar-popup-modal');
+    if (!calendarModal) return;
+
+    calendarModal.classList.add('hidden');
+    calendarModal.classList.remove('flex');
+    
+    // Only remove modal-open from body if the main reservation modal is also closed
+    const mainModal = document.getElementById('modal');
+    if (!mainModal || mainModal.classList.contains('hidden')) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
+function abrirFlujoCalendario() {
+    abrirModal();
+    abrirCalendarModal();
+}
+
+function actualizarFleetPanel(dateStr) {
+    const display = document.getElementById('selected-date-display');
+    if (display) display.textContent = dateStr;
+
+    const panel = document.getElementById('fleet-availability-panel');
+    if (!panel) return;
+
+    // 1. Obtener disponibilidad de la flota para esta fecha
+    const reservedYachtIds = new Set();
+    reservas.forEach(r => {
+        if (r.fecha === dateStr && r.yateId) {
+            reservedYachtIds.add(Number(r.yateId));
+        }
+    });
+
+    const disponiblesHoyYates = yates.filter(y => !reservedYachtIds.has(Number(y.id)));
+    const totalDisponibles = disponiblesHoyYates.length;
+
+    // 2. Renderizar tarjetas de la flota
+    panel.innerHTML = yates.map(y => {
+        const isReserved = reservedYachtIds.has(Number(y.id));
+        
+        let badgeClass = 'badge-disponible';
+        let badgeText = 'Disponible';
+        let cardClass = '';
+        let buttonText = 'Seleccionar';
+        let buttonDisabled = '';
+        let subText = '¡Lista para zarpar! Incluye capitán, refrescos, cervezas y combustible.';
+
+        if (isReserved) {
+            badgeClass = 'badge-reservada';
+            badgeText = 'Reservada';
+            cardClass = 'status-booked';
+            buttonText = 'Ocupada';
+            buttonDisabled = 'disabled';
+            subText = 'Esta embarcación ya tiene reserva asignada para este día.';
+        } else if (totalDisponibles === 1) {
+            badgeClass = 'badge-urgencia';
+            badgeText = 'Última Disponible';
+            cardClass = 'status-urgencia';
+            subText = '🔥 ¡Alta demanda! Es el único yate que queda libre hoy.';
+        }
+
+        const includesList = Array.isArray(y.incluye) ? y.incluye : (y.incluye || '').split(',').map(s => s.trim());
+        const includesHTML = includesList.slice(0, 3).map(inc => `<span class="include-chip text-[10px] py-0.5 px-2 bg-white/5 border border-white/5 rounded-full">${escapeHtml(inc)}</span>`).join('');
+
+        return `
+            <div class="yacht-status-card ${cardClass}">
+                <div class="yacht-status-card-img-wrap">
+                    <img src="${escapeHtml(y.img)}" alt="${escapeHtml(y.nombre)}" class="yacht-status-card-img" loading="lazy">
+                </div>
+                <div class="yacht-status-card-info">
+                    <div class="flex items-center justify-between gap-2">
+                        <h5 class="yacht-status-card-name">${escapeHtml(y.nombre)}</h5>
+                        <span class="text-xs font-bold text-amber-300">${escapeHtml(y.precio.split('/')[0] || y.precio)}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(y.tipo)} • ${escapeHtml(y.capacidad)}</p>
+                    <span class="yacht-status-card-badge ${badgeClass}">${badgeText}</span>
+                    <p class="text-[10px] text-slate-300 mt-2 leading-relaxed">${subText}</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        ${includesHTML}
+                    </div>
+                </div>
+                <div class="yacht-status-card-action">
+                    <button type="button" class="premium-button text-xs py-2 px-3 min-h-0" ${buttonDisabled} onclick="seleccionarYateYFecha(${Number(y.id)}, '${escapeHtml(dateStr)}')">
+                        ${buttonText}
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function seleccionarYateYFecha(yateId, dateStr) {
+    const yate = yates.find(y => Number(y.id) === Number(yateId));
+    if (!yate) return;
+
+    // Set values in the main modal form
+    const selectYate = document.getElementById('select-yate');
+    if (selectYate) {
+        selectYate.value = String(yateId);
+    }
+    const textBox = document.getElementById('reserva-textbox');
+    if (textBox) {
+        textBox.value = yate.nombre;
+    }
+    const fechaInput = document.getElementById('fecha');
+    if (fechaInput) {
+        fechaInput.value = dateStr;
+    }
+
+    // Trigger updates
+    actualizarDisponibilidad();
+    
+    // Close the calendar modal
+    cerrarCalendarModal();
+
+    // Show visual feedback
+    showToast(`Seleccionaste ${yate.nombre} para el ${dateStr}`, 'success');
 }
 
 function toggleMenu() {
@@ -1339,9 +1506,22 @@ function setupInteractions() {
         }
     });
 
+    document.getElementById('calendar-popup-modal')?.addEventListener('click', (event) => {
+        if (event.target.id === 'calendar-popup-modal') {
+            cerrarCalendarModal();
+        }
+    });
+
+    const fechaInput = document.getElementById('fecha');
+    if (fechaInput) {
+        fechaInput.addEventListener('click', abrirCalendarModal);
+        fechaInput.addEventListener('focus', abrirCalendarModal);
+    }
+
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
             cerrarModal();
+            cerrarCalendarModal();
             closeMenu();
         }
     });
