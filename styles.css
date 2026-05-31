@@ -1460,3 +1460,236 @@ body.modal-open {
         top: auto !important;
     }
 }
+
+/* ==================== PREMIUM INTERACTIVE CALENDAR POP-UP STYLES ==================== */
+
+/* Calendar Popup Modal Overlay */
+#calendar-popup-modal {
+    animation: fadeIn 0.24s ease;
+}
+
+/* Adjust Flatpickr Day Cell dimensions for Dot Indicators */
+.flatpickr-day {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    line-height: 28px !important; /* Move number slightly up */
+    padding-bottom: 12px !important; /* Make room for the dots */
+}
+
+/* Horizontal Day Dot Indicator Flex Container */
+.day-dots-container {
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 3px;
+    pointer-events: none;
+}
+
+.day-dot {
+    width: 4.5px;
+    height: 4.5px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.day-dot.dot-free {
+    background-color: #10b981;
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.7);
+}
+
+.day-dot.dot-booked {
+    background-color: rgba(239, 68, 68, 0.45);
+}
+
+/* Dot adjustments when flatpickr-day is selected */
+.flatpickr-day.selected .day-dot.dot-free {
+    background-color: #020617;
+    box-shadow: none;
+}
+
+.flatpickr-day.selected .day-dot.dot-booked {
+    background-color: rgba(2, 6, 23, 0.35);
+}
+
+/* Yacht Availability Card */
+.yacht-status-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0.95rem;
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 100px;
+}
+
+.yacht-status-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(251, 191, 36, 0.22);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.yacht-status-card.status-booked {
+    opacity: 0.5;
+    background: rgba(239, 68, 68, 0.02);
+}
+
+.yacht-status-card.status-urgencia {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: linear-gradient(180deg, rgba(245, 158, 11, 0.05), rgba(2, 6, 23, 0.9));
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.15);
+}
+
+.yacht-status-card-img-wrap {
+    position: relative;
+    flex: 0 0 4.5rem;
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 1rem;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.yacht-status-card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yacht-status-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.yacht-status-card-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.01em;
+}
+
+.yacht-status-card-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.25rem;
+}
+
+.badge-disponible {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-reservada {
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-urgencia {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    animation: pulseGlow 1.8s infinite alternate;
+}
+
+/* Custom Scrollbar for Fleet Availability Panel */
+#fleet-availability-panel::-webkit-scrollbar {
+    width: 6px;
+}
+#fleet-availability-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 9999px;
+}
+#fleet-availability-panel::-webkit-scrollbar-thumb {
+    background: rgba(251, 191, 36, 0.3);
+    border-radius: 9999px;
+}
+
+/* Inline Flatpickr Layout Restyling to match our Glassmorphic Card */
+.inline-calendar-wrap .flatpickr-calendar {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
+}
+
+.inline-calendar-wrap .flatpickr-innerContainer {
+    width: 100% !important;
+}
+
+.inline-calendar-wrap .flatpickr-rContainer {
+    width: 100% !important;
+}
+
+.inline-calendar-wrap .flatpickr-days {
+    width: 100% !important;
+}
+
+.inline-calendar-wrap .dayContainer {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+}
+
+.inline-calendar-wrap .flatpickr-day {
+    max-width: none !important;
+}
+
+/* Responsiveness for Calendar Popup */
+@media (max-width: 1024px) {
+    #calendar-popup-modal .grid {
+        grid-template-columns: 1fr !important;
+    }
+    #fleet-availability-panel {
+        max-height: 320px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    #calendar-popup-modal .modal-shell {
+        max-height: 94vh;
+        overflow: hidden;
+    }
+    #calendar-popup-modal .modal-content-scroll {
+        max-height: 94vh;
+        padding: 1.25rem !important;
+    }
+    .yacht-status-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    .yacht-status-card-action {
+        width: 100%;
+    }
+    .yacht-status-card-action button {
+        width: 100%;
+        min-height: 2.75rem;
+    }
+    .yacht-status-card-img-wrap {
+        width: 100%;
+        height: 6rem;
+    }
+}
+
