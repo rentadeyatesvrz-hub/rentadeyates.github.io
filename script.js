@@ -688,12 +688,17 @@ function mostrarReservasEnLista() {
 
 function obtenerHorasReservadas(yateId, fecha) {
     if (!yateId || !fecha) return [];
-    return reservas
-        .filter(r => Number(r.yateId) === Number(yateId) && r.fecha === fecha)
-        .map(r => r.hora);
+    // Restricción: Si la lancha/yate ya tiene cualquier reserva ese día, se ocupa por completo
+    const tieneReserva = reservas.some(r => Number(r.yateId) === Number(yateId) && r.fecha === fecha);
+    if (tieneReserva) {
+        // Bloquear todos los horarios
+        return ['10:00', '11:00', '12:00', '13:00'];
+    }
+    return [];
 }
 
 function actualizarDisponibilidad() {
+    if (fechaPicker) fechaPicker.redraw();
     const yateId = parseInt(document.getElementById('select-yate')?.value || '', 10);
     const fecha = document.getElementById('fecha')?.value || '';
     const horaSelect = document.getElementById('hora');
@@ -704,6 +709,52 @@ function actualizarDisponibilidad() {
         return;
     }
 
+    if (!fecha) {
+        availability.classList.remove('state-warning', 'state-danger', 'state-success');
+        availability.textContent = 'Selecciona una embarcación y una fecha para ver horarios disponibles.';
+        renderHeroPanel();
+        return;
+    }
+
+    // 1. Obtener la disponibilidad de TODA la flota para esta fecha
+    const reservedYatesIds = new Set();
+    reservas.forEach(r => {
+        if (r.fecha === fecha && r.yateId) {
+            reservedYatesIds.add(Number(r.yateId));
+        }
+    });
+
+    const disponiblesHoyYates = yates.filter(y => !reservedYatesIds.has(Number(y.id)));
+    const totalDisponibles = disponiblesHoyYates.length;
+
+    // 2. Si no hay yate seleccionado aún
+    if (isNaN(yateId) || yateId <= 0) {
+        availability.classList.remove('state-warning', 'state-danger', 'state-success');
+        
+        if (totalDisponibles === 0) {
+            availability.classList.add('state-danger');
+            availability.textContent = 'Todas nuestras embarcaciones (5/5) están ocupadas para este día. Por favor selecciona otra fecha.';
+        } else if (totalDisponibles === 1) {
+            availability.classList.add('state-warning');
+            availability.textContent = `¡Atención! Queda solo 1 lancha disponible para esta fecha: ${disponiblesHoyYates[0].nombre}. Elígela en el menú superior para reservar.`;
+        } else {
+            availability.classList.add('state-success');
+            const nombresDisponibles = disponiblesHoyYates.map(y => y.nombre).join(', ');
+            availability.textContent = `Hay ${totalDisponibles} embarcaciones disponibles para esta fecha: ${nombresDisponibles}. Selecciona una para continuar.`;
+        }
+        
+        Array.from(horaSelect.options).forEach(opt => {
+            if (opt.value) {
+                opt.disabled = true;
+                opt.textContent = `${formatHourLabel(opt.value)} (Elige yate primero)`;
+            }
+        });
+        horaSelect.value = '';
+        renderHeroPanel();
+        return;
+    }
+
+    // 3. Si hay yate seleccionado
     const horasReservadas = obtenerHorasReservadas(yateId, fecha);
     let horasDisponibles = 0;
 
@@ -722,28 +773,33 @@ function actualizarDisponibilidad() {
 
     availability.classList.remove('state-warning', 'state-danger', 'state-success');
 
-    if (!yateId || !fecha) {
-        availability.textContent = 'Selecciona una embarcación y una fecha para ver horarios disponibles.';
-        renderHeroPanel();
-        return;
-    }
-
     if (horasDisponibles === 0) {
         availability.classList.add('state-danger');
-        availability.textContent = 'No hay horarios disponibles para esta combinación. Prueba otra fecha u otra embarcación.';
+        
+        if (totalDisponibles === 0) {
+            availability.textContent = 'Todas nuestras embarcaciones (5/5) están ocupadas para este día. Por favor selecciona otra fecha.';
+        } else if (totalDisponibles === 1) {
+            availability.textContent = `Esta embarcación ya está ocupada. Solo queda 1 lancha disponible para esta fecha: ${disponiblesHoyYates[0].nombre}. Elígela en el menú superior para reservar.`;
+        } else {
+            const nombresDisponibles = disponiblesHoyYates.map(y => y.nombre).join(', ');
+            availability.textContent = `Esta embarcación ya está ocupada. Quedan ${totalDisponibles} embarcaciones disponibles para esta fecha: ${nombresDisponibles}. Puedes elegir una de ellas en el menú superior.`;
+        }
         renderHeroPanel();
         return;
     }
 
-    if (horasReservadas.length > 0) {
+    if (totalDisponibles === 1) {
         availability.classList.add('state-warning');
-        availability.textContent = `Quedan ${horasDisponibles} horario(s) disponible(s). Los horarios ocupados ya fueron marcados.`;
-        renderHeroPanel();
-        return;
+        availability.textContent = `¡Tu embarcación seleccionada está disponible! (Queda solo 1 lancha disponible para esta fecha: ${yates.find(y => y.id === yateId).nombre}). Todos los horarios listos.`;
+    } else {
+        availability.classList.add('state-success');
+        const otrosDisponibles = disponiblesHoyYates.filter(y => Number(y.id) !== Number(yateId)).map(y => y.nombre);
+        if (otrosDisponibles.length > 0) {
+            availability.textContent = `¡Tu embarcación seleccionada está disponible! Todos los horarios listos. (También disponibles para esta fecha: ${otrosDisponibles.join(', ')}).`;
+        } else {
+            availability.textContent = '¡Tu de embarcación seleccionada está disponible! Todos los horarios listos.';
+        }
     }
-
-    availability.classList.add('state-success');
-    availability.textContent = 'Todos los horarios están disponibles para esta fecha.';
     renderHeroPanel();
 }
 
@@ -851,11 +907,10 @@ async function realizarReserva() {
         const snapshot = await db.collection('reservas')
             .where('yateId', '==', yateId)
             .where('fecha', '==', fecha)
-            .where('hora', '==', hora)
             .get();
 
         if (!snapshot.empty) {
-            showToast('Ese horario ya fue reservado. Elige otro.', 'error');
+            showToast('Esta embarcación ya está reservada para este día. Por favor selecciona otra fecha.', 'error');
             setLoadingState(false);
             actualizarDisponibilidad();
             return;
@@ -1138,7 +1193,56 @@ function initFlatpickr() {
         minDate: 'today',
         dateFormat: 'd F Y',
         disableMobile: true,
-        onChange: () => actualizarDisponibilidad()
+        onChange: () => actualizarDisponibilidad(),
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            const dateStr = fp.formatDate(dayElem.dateObj, 'd F Y');
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const checkDate = new Date(dayElem.dateObj);
+            checkDate.setHours(0,0,0,0);
+
+            if (checkDate < today) return;
+
+            const yateSelect = document.getElementById('select-yate');
+            const yateId = yateSelect ? parseInt(yateSelect.value, 10) : NaN;
+
+            // Obtener disponibilidad de la flota para esta fecha
+            const reservedYatesIds = new Set();
+            reservas.forEach(r => {
+                if (r.fecha === dateStr && r.yateId) {
+                    reservedYatesIds.add(Number(r.yateId));
+                }
+            });
+
+            const disponiblesHoyYates = yates.filter(y => !reservedYatesIds.has(Number(y.id)));
+            const totalDisponibles = disponiblesHoyYates.length;
+
+            let isReserved = false;
+            if (!isNaN(yateId) && yateId > 0) {
+                // Si hay yate seleccionado, el día se colorea rojo si el yate está reservado
+                isReserved = reservedYatesIds.has(Number(yateId));
+            } else {
+                // Si no hay yate seleccionado, se colorea rojo solo si toda la flota está ocupada (5/5)
+                isReserved = totalDisponibles === 0;
+            }
+
+            if (isReserved) {
+                dayElem.classList.add('date-occupied');
+                dayElem.classList.remove('date-available');
+            } else {
+                dayElem.classList.add('date-available');
+                dayElem.classList.remove('date-occupied');
+            }
+
+            // Añadir tooltips descriptivos para la versión de escritorio
+            if (totalDisponibles === 0) {
+                dayElem.setAttribute('title', 'Todas las lanchas reservadas (5/5)');
+            } else if (totalDisponibles === 1) {
+                dayElem.setAttribute('title', `Solo queda 1 lancha disponible: ${disponiblesHoyYates[0].nombre}`);
+            } else {
+                dayElem.setAttribute('title', `${totalDisponibles} lanchas disponibles: ${disponiblesHoyYates.map(y => y.nombre).join(', ')}`);
+            }
+        }
     });
 
     cumpleanosPicker = flatpickr('#fecha-cumpleanos', {
