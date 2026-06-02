@@ -1157,8 +1157,13 @@
                     this.allReservas.forEach(r => {
                         // 1. Geolocation
                         const tracking = r.tracking || (r.crm && r.crm.tracking) || {};
-                        const country = r.country || tracking.country || 'México';
+                        let country = r.country || tracking.country || 'México';
                         const region = r.region || tracking.region || 'Veracruz'; // Default state
+
+                        // Normalizar el nombre del país para evitar discrepancias de acentos (p.ej. 'Mexico' vs 'México')
+                        if (country && country.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'mexico') {
+                            country = 'México';
+                        }
 
                         if (country === 'México') {
                             geo[region] = (geo[region] || 0) + 1;
