@@ -1531,8 +1531,65 @@ function setupInteractions() {
     updateNavbarOnScroll();
 }
 
+async function getGeoLocation() {
+    try {
+        const response = await fetch('https://ipapi.co/json/');
+        if (response.ok) {
+            const geo = await response.json();
+            return {
+                country: geo.country_name || 'México',
+                country_code: geo.country || 'MX',
+                region: geo.region || 'Veracruz',
+                city: geo.city || 'Veracruz',
+                ip: geo.ip || ''
+            };
+        }
+    } catch (e) {
+        console.warn('No se pudo obtener la geolocalización por IP:', e);
+    }
+    return {
+        country: 'México',
+        country_code: 'MX',
+        region: 'Veracruz',
+        city: 'Veracruz',
+        ip: ''
+    };
+}
+
+function getDetailedDeviceType(ua) {
+    ua = ua || navigator.userAgent;
+    const uaLower = ua.toLowerCase();
+    
+    // Tablet
+    const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk)/i.test(uaLower);
+    if (isTablet) {
+        if (uaLower.includes('ipad')) return 'iPad / Tablet iOS';
+        if (uaLower.includes('android')) return 'Tablet Android';
+        return 'Tablet / iPad';
+    }
+    
+    // Mobile
+    const isMobile = /mobi|ip(hone|od)|android|blackberry|opera mini|iemobile|webos/i.test(uaLower);
+    if (isMobile) {
+        if (/iphone|ipod/i.test(uaLower)) return 'Móvil iOS (iPhone)';
+        if (/android/i.test(uaLower)) return 'Móvil Android';
+        return 'Móvil';
+    }
+    
+    // PC / Laptops
+    if (uaLower.includes('windows')) return 'PC (Windows)';
+    if (uaLower.includes('macintosh') || uaLower.includes('mac os x')) return 'Laptop / Mac (macOS)';
+    if (uaLower.includes('linux')) return 'PC (Linux)';
+    
+    return 'PC / Laptop (Desktop)';
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
     trackingSnapshot = captureTrackingParams();
+    trackingSnapshot.device_details = getDetailedDeviceType();
+    getGeoLocation().then(geo => {
+        trackingSnapshot = { ...trackingSnapshot, ...geo };
+    });
     hydrateWhatsAppLinks();
     await Promise.all([initGoogleTag(), initMetaPixel()]);
     renderFlota();
