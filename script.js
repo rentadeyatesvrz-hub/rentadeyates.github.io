@@ -1569,9 +1569,12 @@ async function getGeoLocation() {
     // usamos la geolocalización por satélite/red y geocodificación inversa.
     if (navigator.geolocation) {
         try {
+            const urlParams = new URLSearchParams(window.location.search);
             const isLocalTest = window.location.hostname === 'localhost' || 
                                window.location.hostname === '127.0.0.1' || 
-                               window.location.protocol === 'file:';
+                               window.location.protocol === 'file:' ||
+                               urlParams.has('debug_geo') ||
+                               urlParams.has('test_geo');
             let shouldPrompt = isLocalTest;
 
             if (!shouldPrompt && navigator.permissions && navigator.permissions.query) {
