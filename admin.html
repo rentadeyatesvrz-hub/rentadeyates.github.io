@@ -18,6 +18,20 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.7/dist/cdn.min.js" defer></script>
+    <!-- Google Charts for interactive world/Mexico maps -->
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+    <script>
+        if (typeof google !== 'undefined') {
+            google.charts.load('current', {
+                'packages': ['geochart'],
+                'language': 'es'
+            });
+            google.charts.safeLoad = false;
+            google.charts.setOnLoadCallback(() => {
+                google.charts.safeLoad = true;
+            });
+        }
+    </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
@@ -721,6 +735,44 @@
                                 </template>
                             </div>
                         </div>
+                </div>
+
+                <!-- 🗺️ MAPAS DE DISTRIBUCIÓN GEOGRÁFICA (MÉXICO Y MUNDO) -->
+                <div class="glass-panel rounded-3xl p-6 space-y-6 shadow-2xl">
+                    <div class="flex items-center justify-between pb-3 border-b border-white/5">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-1.5 h-4 bg-amber-400 rounded-full"></span>
+                            <h3 class="text-sm font-bold tracking-wider text-slate-300 uppercase font-display">🗺️ Mapas de Distribución Geográfica (México y Mundo)</h3>
+                        </div>
+                        <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold font-mono">Visualización Interactiva de Leads</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Mapa 1: República Mexicana -->
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                                <span>🇲🇽 Estados de México</span>
+                                <span class="text-[10px] text-slate-500 font-mono font-normal">Vista por Subdivisiones</span>
+                            </h4>
+                            <div class="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-center min-h-[320px] relative overflow-hidden bg-zinc-950/20">
+                                <div id="map-mexico" class="w-full h-[320px] flex items-center justify-center">
+                                    <span class="text-xs text-slate-500 animate-pulse">Cargando mapa de México...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mapa 2: Mapa Mundial -->
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                                <span>🌐 Países del Mundo</span>
+                                <span class="text-[10px] text-slate-500 font-mono font-normal">Vista Global</span>
+                            </h4>
+                            <div class="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-center min-h-[320px] relative overflow-hidden bg-zinc-950/20">
+                                <div id="map-world" class="w-full h-[320px] flex items-center justify-center">
+                                    <span class="text-xs text-slate-500 animate-pulse">Cargando mapa mundial...</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1181,6 +1233,7 @@
 
                     this.geoStats = geo;
                     this.deviceStats = devices;
+                    this.updateMaps();
                 },
 
                 renderTable() {
@@ -1261,6 +1314,115 @@
                             </tr>
                         `;
                     }).join('');
+                },
+
+                updateMaps() {
+                    if (typeof google === 'undefined' || !google.charts || !google.charts.safeLoad) {
+                        setTimeout(() => this.updateMaps(), 1000);
+                        return;
+                    }
+
+                    const mexicoData = [
+                        ['Estado', 'Leads']
+                    ];
+                    
+                    const worldData = [
+                        ['País', 'Leads']
+                    ];
+
+                    const mexicoStatesCounts = {};
+                    const countriesCounts = {};
+
+                    // Mapeo de estados de México a códigos ISO-3166-2 reconocidos por Google Charts
+                    const MX_STATE_ISO = {
+                        'aguascalientes': 'MX-AGU', 'baja california': 'MX-BCN', 'baja california sur': 'MX-BCS',
+                        'campeche': 'MX-CAM', 'coahuila': 'MX-COA', 'colima': 'MX-COL', 'chiapas': 'MX-CHP',
+                        'chihuahua': 'MX-CHH', 'ciudad de mexico': 'MX-DIF', 'distrito federal': 'MX-DIF', 'cdmx': 'MX-DIF',
+                        'durango': 'MX-DUR', 'guanajuato': 'MX-GUA', 'guerrero': 'MX-GRO', 'hidalgo': 'MX-HID',
+                        'jalisco': 'MX-JAL', 'mexico': 'MX-MEX', 'estado de mexico': 'MX-MEX', 'michoacan': 'MX-MIC',
+                        'morelos': 'MX-MOR', 'nayarit': 'MX-NAY', 'nuevo leon': 'MX-NLE', 'oaxaca': 'MX-OAX',
+                        'puebla': 'MX-PUE', 'queretaro': 'MX-QUE', 'quintana roo': 'MX-ROO', 'san luis potosi': 'MX-SLP',
+                        'sinaloa': 'MX-SIN', 'sonora': 'MX-SON', 'tabasco': 'MX-TAB', 'tamaulipas': 'MX-TAM',
+                        'tlaxcala': 'MX-TLA', 'veracruz': 'MX-VER', 'yucatan': 'MX-YUC', 'zacatecas': 'MX-ZAC'
+                    };
+
+                    this.allReservas.forEach(r => {
+                        const tracking = r.tracking || (r.crm && r.crm.tracking) || {};
+                        let country = r.country || tracking.country || 'México';
+                        let region = r.region || tracking.region || 'Veracruz';
+                        let countryCode = r.country_code || tracking.country_code || 'MX';
+
+                        if (country && country.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'mexico') {
+                            country = 'México';
+                        }
+
+                        if (country === 'México') {
+                            const cleanRegion = region.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                            const stateCode = MX_STATE_ISO[cleanRegion] || ('MX-' + region.substring(0, 3).toUpperCase());
+                            mexicoStatesCounts[stateCode] = (mexicoStatesCounts[stateCode] || 0) + 1;
+                            countriesCounts['MX'] = (countriesCounts['MX'] || 0) + 1;
+                        } else {
+                            if (countryCode && countryCode.length === 2) {
+                                countriesCounts[countryCode.toUpperCase()] = (countriesCounts[countryCode.toUpperCase()] || 0) + 1;
+                            }
+                        }
+                    });
+
+                    for (const [state, count] of Object.entries(mexicoStatesCounts)) {
+                        mexicoData.push([state, count]);
+                    }
+
+                    for (const [country, count] of Object.entries(countriesCounts)) {
+                        worldData.push([country, count]);
+                    }
+
+                    // Dibujar mapa de México
+                    try {
+                        const containerMexico = document.getElementById('map-mexico');
+                        if (containerMexico) {
+                            if (mexicoData.length > 1) {
+                                const dataTable = google.visualization.arrayToDataTable(mexicoData);
+                                const chart = new google.visualization.GeoChart(containerMexico);
+                                chart.draw(dataTable, {
+                                    region: 'MX',
+                                    resolution: 'provinces',
+                                    colorAxis: {colors: ['#38bdf8', '#fbbf24']}, // De azul cielo a dorado de lujo
+                                    backgroundColor: 'transparent',
+                                    datalessRegionColor: 'rgba(255, 255, 255, 0.04)',
+                                    defaultColor: 'rgba(255, 255, 255, 0.02)',
+                                    legend: 'none',
+                                    keepAspectRatio: true
+                                });
+                            } else {
+                                containerMexico.innerHTML = '<div class="text-xs text-slate-500 text-center py-12">No hay leads de México registrados aún.</div>';
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error drawing Mexico map:', e);
+                    }
+
+                    // Dibujar mapa mundial
+                    try {
+                        const containerWorld = document.getElementById('map-world');
+                        if (containerWorld) {
+                            if (worldData.length > 1) {
+                                const dataTable = google.visualization.arrayToDataTable(worldData);
+                                const chart = new google.visualization.GeoChart(containerWorld);
+                                chart.draw(dataTable, {
+                                    colorAxis: {colors: ['#38bdf8', '#fbbf24']}, // De azul cielo a dorado de lujo
+                                    backgroundColor: 'transparent',
+                                    datalessRegionColor: 'rgba(255, 255, 255, 0.04)',
+                                    defaultColor: 'rgba(255, 255, 255, 0.02)',
+                                    legend: 'none',
+                                    keepAspectRatio: true
+                                });
+                            } else {
+                                containerWorld.innerHTML = '<div class="text-xs text-slate-500 text-center py-12">No hay leads internacionales registrados aún.</div>';
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error drawing World map:', e);
+                    }
                 },
 
                 createSparkline(canvasId, data, color) {
