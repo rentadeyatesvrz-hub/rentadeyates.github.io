@@ -1611,6 +1611,12 @@ async function getGeoLocation() {
             }
         } catch (error) {
             console.log('HTML5 Geolocation omitida o denegada:', error.message);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('debug_geo') || urlParams.has('test_geo')) {
+                setTimeout(() => {
+                    showToast(`Debug GPS: ${error.message}. Verifica permisos de Ubicación en el candado de la URL.`, 'error');
+                }, 1000);
+            }
         }
     }
 
