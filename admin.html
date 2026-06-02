@@ -1616,13 +1616,17 @@
                     // 4. Process Horizontal Hour Slot Demand Chart (Innovative third metric)
                     const conteoHoras = { '10:00': 0, '11:00': 0, '12:00': 0, '13:00': 0 };
                     this.allReservas.forEach(r => {
-                        if (r.hora && conteoHoras[r.hora] !== undefined) {
-                            conteoHoras[r.hora]++;
+                        if (r.hora) {
+                            const cleanHora = String(r.hora).trim();
+                            if (conteoHoras[cleanHora] !== undefined) {
+                                conteoHoras[cleanHora]++;
+                            }
                         }
                     });
 
                     const horasLabels = ['10 am', '11 am', '12 pm', '1 pm'];
                     const horasValues = ['10:00', '11:00', '12:00', '13:00'].map(h => conteoHoras[h]);
+                    console.log('DEBUG HORAS - Valores del gráfico:', horasValues);
 
                     const ctxHoras = horasCanvas.getContext('2d');
                     const hoursGradient = ctxHoras.createLinearGradient(0, 0, 250, 0);
@@ -1640,11 +1644,11 @@
                                 borderColor: '#38bdf8',
                                 borderWidth: 1.5,
                                 borderRadius: 6,
-                                hoverBackgroundColor: '#0284c7',
-                                indexAxis: 'y' // Horizontal bar chart!
+                                hoverBackgroundColor: '#0284c7'
                             }]
                         },
                         options: {
+                            indexAxis: 'y', // Horizontal bar chart en Chart.js v4! (Debe ir en options, no en datasets)
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
