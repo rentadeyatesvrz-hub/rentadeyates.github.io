@@ -1531,13 +1531,29 @@ function setupInteractions() {
     updateNavbarOnScroll();
 }
 
+function normalizeCountryName(c) {
+    if (!c) return 'México';
+    const clean = String(c).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (clean === 'mexico') return 'México';
+    return c;
+}
+
 async function getGeoLocation() {
+    let baseGeo = {
+        country: 'México',
+        country_code: 'MX',
+        region: 'Veracruz',
+        city: 'Veracruz',
+        ip: ''
+    };
+
+    // 1. Obtener datos por IP en segundo plano (Rápido, silencioso y no pide permisos)
     try {
         const response = await fetch('https://ipapi.co/json/');
         if (response.ok) {
             const geo = await response.json();
-            return {
-                country: geo.country_name || 'México',
+            baseGeo = {
+                country: normalizeCountryName(geo.country_name),
                 country_code: geo.country || 'MX',
                 region: geo.region || 'Veracruz',
                 city: geo.city || 'Veracruz',
@@ -1545,15 +1561,57 @@ async function getGeoLocation() {
             };
         }
     } catch (e) {
-        console.warn('No se pudo obtener la geolocalización por IP:', e);
+        console.warn('IP API fallback:', e);
     }
-    return {
-        country: 'México',
-        country_code: 'MX',
-        region: 'Veracruz',
-        city: 'Veracruz',
-        ip: ''
-    };
+
+    // 2. Si el navegador soporta Geolocation y ya está concedida la autorización,
+    // o si estamos en ambiente local (localhost / 127.0.0.1) para depurar coordenadas con Chrome Sensors,
+    // usamos la geolocalización por satélite/red y geocodificación inversa.
+    if (navigator.geolocation) {
+        try {
+            const isLocalTest = window.location.hostname === 'localhost' || 
+                               window.location.hostname === '127.0.0.1' || 
+                               window.location.protocol === 'file:';
+            let shouldPrompt = isLocalTest;
+
+            if (!shouldPrompt && navigator.permissions && navigator.permissions.query) {
+                try {
+                    const status = await navigator.permissions.query({ name: 'geolocation' });
+                    if (status.state === 'granted') {
+                        shouldPrompt = true;
+                    }
+                } catch (e) {
+                    console.warn('No se pudo consultar permisos de geolocalización:', e);
+                }
+            }
+
+            if (shouldPrompt) {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: false,
+                        timeout: 5000
+                    });
+                });
+
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                // Llamada a geocodificador inverso gratuito y público de BigDataCloud
+                const revGeoResponse = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`);
+                if (revGeoResponse.ok) {
+                    const geoData = await revGeoResponse.json();
+                    baseGeo.country = normalizeCountryName(geoData.countryName || baseGeo.country);
+                    baseGeo.country_code = geoData.countryCode || baseGeo.country_code;
+                    baseGeo.region = geoData.principalSubdivision || baseGeo.region;
+                    baseGeo.city = geoData.city || geoData.locality || baseGeo.city;
+                }
+            }
+        } catch (error) {
+            console.log('HTML5 Geolocation omitida o denegada:', error.message);
+        }
+    }
+
+    return baseGeo;
 }
 
 function getDetailedDeviceType(ua) {
