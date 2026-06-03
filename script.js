@@ -838,13 +838,13 @@ function getMarinaInfo(yateId) {
         return {
             nombre: "Marina Estero 42 (Isla del Amor)",
             ubicacion: "Estero 42, Isla del Amor, Boca del Río / Alvarado, Ver.",
-            mapLink: "https://maps.app.goo.gl/w5t29D698mR2Z8x9A"
+            mmapLink: "https://www.google.com/maps/search/?api=1&query=Marina+Estero+42+Isla+del+Amor"
         };
     } else {
         return {
             nombre: "Marina El Dorado",
             ubicacion: "Blvrd El Dorado 2, Boca del Río / Alvarado, Ver. (Plaza El Dorado)",
-            mapLink: "https://maps.app.goo.gl/tBwJgV3D4f1B9Z1A6"
+            mapLink: "https://www.google.com/maps/search/?api=1&query=Marina+El+Dorado+Boca+del+Rio"
         };
     }
 }
