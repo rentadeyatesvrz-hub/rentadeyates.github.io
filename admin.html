@@ -1070,17 +1070,27 @@
                 cargarReservasAdmin(db) {
                     let isInitialLoad = true;
                     db.collection("reservas").onSnapshot(snapshot => {
-                        this.allReservas = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-                        
                         let hasNewChanges = false;
                         let lastDoc = null;
                         
                         snapshot.docChanges().forEach(change => {
-                            if (change.type === "added" && !isInitialLoad) {
-                                hasNewChanges = true;
-                                lastDoc = change.doc.data();
+                            if (!isInitialLoad) {
+                                if (change.type === "added") {
+                                    hasNewChanges = true;
+                                    lastDoc = change.doc.data();
+                                } else if (change.type === "modified") {
+                                    const prevData = this.allReservas.find(r => r.id === change.doc.id);
+                                    const newData = change.doc.data();
+                                    // Disparar notificación si es una actualización real de datos clave de reserva
+                                    if (!prevData || prevData.status !== newData.status || prevData.fecha !== newData.fecha || prevData.yate !== newData.yate || prevData.hora !== newData.hora) {
+                                        hasNewChanges = true;
+                                        lastDoc = newData;
+                                    }
+                                }
                             }
                         });
+                        
+                        this.allReservas = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                         
                         isInitialLoad = false;
                         this.calcularKPIs();
