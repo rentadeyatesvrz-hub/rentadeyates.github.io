@@ -10,12 +10,12 @@
     <meta name="robots" content="index, follow, max-image-preview:large">
     <meta name="theme-color" content="#020617">
     <meta name="google-site-verification" content="REEMPLAZAR_CON_TOKEN_GOOGLE_SEARCH_CONSOLE">
-    <link rel="canonical" href="https://rentayatesveracruz.mx/">
+    <link rel="canonical" href="https://rentayatesveracruz.mx/renta-de-yates/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="es_MX">
     <meta property="og:title" content="Renta de Lanchas y Yates en Veracruz | Reserva en Línea">
     <meta property="og:description" content="Renta de lanchas y yates de lujo en Veracruz. Vive una experiencia inolvidable en el mar con tripulación profesional y reservas en tiempo real.">
-    <meta property="og:url" content="https://rentayatesveracruz.mx/">
+    <meta property="og:url" content="https://rentayatesveracruz.mx/renta-de-yates/">
     <meta property="og:site_name" content="Elite Yacht Rentals">
     <meta property="og:image" content="https://images.unsplash.com/photo-1540946485063-a40da27545f8?auto=format&fit=crop&w=1600&q=80">
     <meta name="twitter:card" content="summary_large_image">
@@ -30,19 +30,27 @@
             siteUrl: 'https://rentayatesveracruz.mx',
             businessPhone: '522295202785',
             businessPhoneDisplay: '+52 229 520 2785',
-            businessEmail: 'hola@rentayatesveracruz.mx',
+            businessEmail: 'reservas@rentayatesveracruz.mx',
             location: 'Veracruz, México',
+            
+            // === CONFIGURACIÓN DE ATRIBUCIÓN DE CAMPAÑA CRM ===
+            campaignSource: 'google_ads',                   // Identifica que el lead vino de Google Ads en tu CRM
+            campaignChannel: 'campana_busqueda_renta',       // Nombre de tu campaña para identificarla en el Dashboard
+            
             // === CONFIGURACIÓN DE GOOGLE TAG Y ADS ===
             googleTagId: 'GT-XXXXXXXXXX',                   // Reemplaza con tu ID de Google Analytics 4 (Ej: G-XXXXXX o GT-XXXXXX)
-            googleAdsId: 'AW-18205477050',                  // Tu ID real de Google Ads (Ya configurado)
-            googleAdsSendTo: 'AW-18205477050/XXXXXXXXXXXX', // Reemplaza XXXXXXXXXXXX con la etiqueta de conversión de tu campaña
+            googleAdsId: 'AW-18205477050',                  // Tu ID real de Google Ads (Ya preconfigurado)
+            
+            // Reemplaza XXXXXXXXXXXX con la etiqueta de conversión de Google Ads (la obtienes al crear la conversión de "Lead" en Google Ads)
+            // Ejemplo: 'AW-18205477050/abcD123efgH456ijkL'
+            googleAdsSendTo: 'AW-18205477050/XXXXXXXXXXXX', 
             
             // === CONFIGURACIÓN DE META PIXEL (FACEBOOK / INSTAGRAM) ===
             metaPixelId: '123456789012345',                 // Reemplaza con tu ID de Meta Pixel real
             
             instagramUrl: 'https://www.instagram.com/tu_cuenta',
             facebookUrl: 'https://www.facebook.com/tu_pagina',
-            whatsappWelcomeMessage: 'Hola, gracias por contactar a Elite Yacht Rentals. Con gusto te ayudamos a reservar tu lancha o yate. Compártenos tu nombre, fecha deseada y embarcación de interés.'
+            whatsappWelcomeMessage: 'Hola, vengo de ver sus Yates en Google. Me gustaría recibir información y cotizar para un paseo privado. Mi nombre es:'
         };
     </script>
     <script>
@@ -67,7 +75,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-    <link rel="stylesheet" href="styles.css?v=elite-brand-clean-reservas-20260429">
+    <link rel="stylesheet" href="../styles.css?v=elite-brand-clean-reservas-20260429">
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -76,7 +84,7 @@
       "description": "Renta de lanchas y yates de lujo en Veracruz con reservas en línea y atención por WhatsApp Business.",
       "url": "https://rentayatesveracruz.mx/",
       "telephone": "+52 229 520 2785",
-      "email": "hola@rentayatesveracruz.mx",
+      "email": "reservas@rentayatesveracruz.mx",
       "priceRange": "$$",
       "image": "https://rentayatesveracruz.mx/icon-512.png",
       "areaServed": "Veracruz, México",
@@ -457,15 +465,12 @@
     </footer>
 
     <!-- ==================== BOTPRESS CHAT MIA - EMBED OFICIAL ==================== -->
-   <!-- <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script> -->
-   <!-- <script src="https://files.bpcontent.cloud/2026/05/10/21/20260510213157-RBDVVFQ1.js" defer></script> -->
-
     <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
     <script src="https://files.bpcontent.cloud/2026/05/22/02/20260522022921-REJ7LXJN.js" defer></script>
 
     <!-- FIREBASE SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="script.js?v=elite-brand-clean-reservas-20260429"></script>
+    <script src="../script.js?v=elite-brand-clean-reservas-20260429"></script>
 </body>
 </html>
