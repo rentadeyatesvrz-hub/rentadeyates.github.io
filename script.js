@@ -1674,5 +1674,43 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupInteractions();
     actualizarDisponibilidad();
     actualizarResumenReservas();
+    initChatbotGeoInjector();
 });
+
+function initChatbotGeoInjector() {
+    if (!db) return;
+    
+    // Escuchar en tiempo real las reservas creadas por el chatbot (cualquier canal como webchat, instagram, fb)
+    // para inyectarles la geolocalización simulada/real del navegador del cliente
+    db.collection('reservas')
+        .onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const data = change.doc.data();
+                    const src = String(data.source || '').toLowerCase();
+                    const isChatbot = src.includes('chatbot') || src.includes('botpress') || src.includes('bot') || src.includes('mia');
+                    
+                    if (isChatbot) {
+                        // Si el documento se creó hace menos de 1 minuto y no tiene tracking, le inyectamos la geolocalización actual
+                        const docTimestamp = data.timestamp ? (data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp)) : new Date();
+                        const ageInSeconds = (new Date() - docTimestamp) / 1000;
+                        
+                        if (ageInSeconds < 60 && (!data.tracking || !data.crm || !data.crm.tracking)) {
+                            console.log('Geo-Injector: Inyectando geolocalización a reserva de chatbot:', change.doc.id);
+                            change.doc.ref.set({
+                                tracking: trackingSnapshot,
+                                crm: {
+                                    tracking: trackingSnapshot
+                                }
+                            }, { merge: true }).catch(err => {
+                                console.warn('Geo-Injector: Error al inyectar tracking:', err);
+                            });
+                        }
+                    }
+                }
+            });
+        }, err => {
+            console.warn('Geo-Injector: Error en el listener:', err);
+        });
+}
 
