@@ -1,1758 +1,1678 @@
-<!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#09090b">
-    <title>Dashboard Administrador • Elite Yacht Rentals</title>
+// ==================== CONFIG MARKETING / CRM ====================
+const SITE_CONFIG = window.SITE_CONFIG || {};
+const isRealValue = (value, placeholder) => {
+    if (!value || typeof value !== 'string') return false;
+    if (placeholder && value === placeholder) return false;
+    if (value.includes('XXXXXXXX') || value.includes('YOUR_') || value.includes('tu_') || value.includes('tudominio.com')) return false;
+    return true;
+};
 
-    <link rel="manifest" href="manifest.json">
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const existing = document.querySelector(`script[src="${src}"]`);
+        if (existing) {
+            resolve(existing);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = () => resolve(script);
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
 
-    <!-- Tailwind, Firebase, Chart.js, Flatpickr and Alpine.js -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.7/dist/cdn.min.js" defer></script>
-    <!-- Google Charts for interactive world/Mexico maps -->
-    <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <script>
-        if (typeof google !== 'undefined') {
-            google.charts.load('current', {
-                'packages': ['geochart'],
-                'language': 'es'
-            });
-            google.charts.safeLoad = false;
-            google.charts.setOnLoadCallback(() => {
-                google.charts.safeLoad = true;
-            });
-        }
-    </script>
+async function initGoogleTag() {
+    const googleTagId = SITE_CONFIG.googleTagId;
+    const googleAdsId = SITE_CONFIG.googleAdsId;
+    const realGoogleTag = isRealValue(googleTagId, 'GT-XXXXXXXXXX');
+    const realGoogleAds = isRealValue(googleAdsId, 'AW-XXXXXXXXXX');
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
-        
-        body { 
-            background: #09090b; 
-            color: #f4f4f5; 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+    if (!realGoogleTag && !realGoogleAds) return;
+
+    const idToLoad = realGoogleTag ? googleTagId : googleAdsId;
+    try {
+        await loadScript(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(idToLoad)}`);
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
+        window.gtag('js', new Date());
+        if (realGoogleTag) window.gtag('config', googleTagId);
+        if (realGoogleAds) window.gtag('config', googleAdsId);
+    } catch (error) {
+        console.error('No se pudo cargar Google tag:', error);
+    }
+}
+
+async function initMetaPixel() {
+    const metaPixelId = SITE_CONFIG.metaPixelId;
+    if (!isRealValue(metaPixelId, '123456789012345')) return;
+
+    try {
+        await loadScript('https://connect.facebook.net/en_US/fbevents.js');
+        if (!window.fbq) {
+            const fbq = function() {
+                fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments);
+            };
+            fbq.queue = [];
+            fbq.loaded = true;
+            fbq.version = '2.0';
+            window.fbq = fbq;
+            window._fbq = fbq;
         }
-        
-        .font-display {
-            font-family: 'Outfit', sans-serif;
+        window.fbq('init', metaPixelId);
+        window.fbq('track', 'PageView');
+    } catch (error) {
+        console.error('No se pudo cargar Meta Pixel:', error);
+    }
+}
+
+function trackLeadEvent(payload = {}) {
+    if (typeof window.gtag === 'function') {
+        window.gtag('event', 'generate_lead', payload);
+    }
+
+    if (typeof window.fbq === 'function') {
+        window.fbq('track', 'Lead', payload);
+    }
+
+    const sendTo = SITE_CONFIG.googleAdsSendTo;
+    if (typeof window.gtag === 'function' && isRealValue(sendTo, 'AW-XXXXXXXXXX/XXXXXXXXXXXX')) {
+        window.gtag('event', 'conversion', {
+            send_to: sendTo,
+            value: 1.0,
+            currency: 'MXN'
+        });
+    }
+}
+
+function trackReserveIntent() {
+    if (typeof window.gtag === 'function') {
+        window.gtag('event', 'begin_checkout', {
+            event_category: 'reservas',
+            event_label: 'abrir_modal_reserva'
+        });
+    }
+
+    if (typeof window.fbq === 'function') {
+        window.fbq('trackCustom', 'OpenReservationModal');
+    }
+}
+
+function normalizePhoneForWhatsApp(value) {
+    return String(value || '').replace(/\D+/g, '');
+}
+
+function buildWhatsAppMessage(extra = {}) {
+    const baseMessage = SITE_CONFIG.whatsappWelcomeMessage || 'Hola, gracias por contactar a Elite Yacht Rentals.';
+    const lines = [baseMessage];
+
+    if (extra.nombreCliente) lines.push(`Nombre: ${extra.nombreCliente}`);
+    if (extra.telefono) lines.push(`Teléfono: ${extra.telefono}`);
+    if (extra.yate) lines.push(`Embarcación: ${extra.yate}`);
+    if (extra.fecha) lines.push(`Fecha: ${extra.fecha}`);
+    if (extra.hora) lines.push(`Hora: ${formatHourLabel(extra.hora)}`);
+
+    return lines.join('\n');
+}
+
+function getWhatsAppLink(extra = {}) {
+    const phone = normalizePhoneForWhatsApp(SITE_CONFIG.businessPhone || '522299999999');
+    const message = encodeURIComponent(buildWhatsAppMessage(extra));
+    return `https://wa.me/${phone}?text=${message}`;
+}
+
+function hydrateWhatsAppLinks() {
+    const preview = document.getElementById('whatsapp-welcome-preview');
+    if (preview) preview.textContent = buildWhatsAppMessage();
+
+    ['whatsapp-float-link', 'whatsapp-contact-link', 'modal-whatsapp-link', 'mobile-whatsapp-link'].forEach((id) => {
+        const link = document.getElementById(id);
+        if (link) link.href = getWhatsAppLink();
+    });
+}
+
+function captureTrackingParams() {
+    const params = new URLSearchParams(window.location.search);
+    const fields = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid'];
+    const data = {};
+
+    fields.forEach((field) => {
+        const value = params.get(field);
+        if (value) {
+            data[field] = value;
+            localStorage.setItem(`tracking_${field}`, value);
+        } else {
+            const stored = localStorage.getItem(`tracking_${field}`);
+            if (stored) data[field] = stored;
+        }
+    });
+
+    data.landing_page = window.location.href;
+    data.referrer = document.referrer || 'direct';
+    data.user_agent = navigator.userAgent;
+    return data;
+}
+
+function getCRMDeviceType() {
+    if (window.matchMedia('(max-width: 640px)').matches) return 'mobile';
+    if (window.matchMedia('(max-width: 1024px)').matches) return 'tablet';
+    return 'desktop';
+}
+
+function validateBirthday(value) {
+    if (!value) return 'La fecha de cumpleaños es obligatoria.';
+
+    const selected = new Date(`${value}T00:00:00`);
+    const today = new Date();
+    const min = new Date('1900-01-01T00:00:00');
+
+    if (Number.isNaN(selected.getTime())) return 'La fecha de cumpleaños no es válida.';
+    if (selected > today) return 'La fecha de cumpleaños no puede estar en el futuro.';
+    if (selected < min) return 'La fecha de cumpleaños no parece válida.';
+
+    let age = today.getFullYear() - selected.getFullYear();
+    const monthDiff = today.getMonth() - selected.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < selected.getDate())) {
+        age -= 1;
+    }
+
+    if (age < 18) return 'El cliente debe ser mayor de edad.';
+    return '';
+}
+
+// ==================== FIREBASE CONFIG ====================
+const firebaseConfig = {
+    apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
+    authDomain: "elite-yacht-rentals.firebaseapp.com",
+    projectId: "elite-yacht-rentals",
+    storageBucket: "elite-yacht-rentals.firebasestorage.app",
+    messagingSenderId: "601846230412",
+    appId: "1:601846230412:web:e9b96b3aedfa013617faa9"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const yates = [
+    { id: 1, nombre: "La Gozadera", tipo: "Lancha", precio: "MX$9,000/8h", capacidad: "Hasta 7 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1776209301902-7da8b91f85d9?q=80&w=586&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { id: 2, nombre: "La Pachanga", tipo: "Lancha", precio: "MX$10,500/8h", capacidad: "Hasta 7 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1776215340109-2a5f8e02e9ee?q=80&w=324&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { id: 3, nombre: "Monky", tipo: "Lancha", precio: "MX$8,000/8h", capacidad: "10 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1777789777463-01635c7ed8aa?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { id: 4, nombre: "Percales", tipo: "Lancha", precio: "MX$3,500xh ò MX$16,000/6h", capacidad: "12 personas", incluye: "Capitán,Dos Bolsas de Hielo, Coca-Cola 2L, Combustible, 12 Cerveza, Agua Mineral 2L", img: "https://images.unsplash.com/photo-1776208903634-4aab68769156?q=80&w=1022&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { id: 5, nombre: "Patrik", tipo: "Lancha", precio: "MX$8,500/8h", capacidad: "Hasta 7 personas", incluye: "Capitán,Dos Bolsas de Hielo,Coca-Cola 2L,Combustible,12 Cerveza,Agua Mineral 2L", img: "https://images.unsplash.com/photo-1778220290071-a2913c39947c?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" }
+];
+
+const HORARIOS_BASE = ['10:00', '11:00', '12:00', '13:00'];
+
+let reservas = [];
+let fechaPicker = null;
+let cumpleanosPicker = null;
+let yateSeleccionado = null;
+let toastTimeout = null;
+let syncMode = 'Live';
+let reservasSincronizadas = false;
+let disponiblesActivos = [];
+let disponiblesCarouselIndex = 0;
+let disponiblesCarouselTimer = null;
+let trackingSnapshot = {};
+
+// ... (todo el resto del código es exactamente igual al que tenías, sin ningún cambio)
+
+function getReservationContainers() {
+    return [
+        document.getElementById('lista-reservas-modal'),
+        document.getElementById('lista-reservas-section')
+    ].filter(Boolean);
+}
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
+
+function todayText() {
+    const ahora = new Date();
+    const dia = String(ahora.getDate()).padStart(2, '0');
+    const meses = [
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+    const mes = meses[ahora.getMonth()];
+    const anio = ahora.getFullYear();
+    return `${dia} ${mes} ${anio}`;
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function normalizeText(value) {
+    return String(value ?? '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ');
+}
+
+function formatHourLabel(value) {
+    const labels = {
+        '10:00': '10:00 am',
+        '11:00': '11:00 am',
+        '12:00': '12:00 pm',
+        '13:00': '13:00 pm'
+    };
+    return labels[String(value ?? '').trim()] || String(value ?? '');
+}
+
+function getYatesDisponiblesHoy() {
+    const hoy = normalizeText(todayText());
+    const reservadosHoyIds = new Set();
+    const reservadosHoyNombres = new Set();
+
+    reservas.forEach(reserva => {
+        if (normalizeText(reserva.fecha) !== hoy) return;
+
+        if (reserva.yateId !== undefined && reserva.yateId !== null && reserva.yateId !== '') {
+            reservadosHoyIds.add(Number(reserva.yateId));
         }
 
-        /* Ambient Orbs */
-        .orb-glow-1 {
-            position: absolute;
-            top: -10%;
-            right: 10%;
-            width: 450px;
-            height: 450px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(251, 191, 36, 0.04) 0%, transparent 70%);
-            filter: blur(50px);
-            pointer-events: none;
-            z-index: 0;
+        if (reserva.yate) {
+            reservadosHoyNombres.add(normalizeText(reserva.yate));
         }
+    });
 
-        .orb-glow-2 {
-            position: absolute;
-            bottom: -5%;
-            left: 5%;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(14, 165, 233, 0.03) 0%, transparent 70%);
-            filter: blur(60px);
-            pointer-events: none;
-            z-index: 0;
-        }
+    return yates.filter(yate => {
+        const reservadoPorId = reservadosHoyIds.has(Number(yate.id));
+        const reservadoPorNombre = reservadosHoyNombres.has(normalizeText(yate.nombre));
+        return !reservadoPorId && !reservadoPorNombre;
+    });
+}
 
-        /* Glassmorphism Styles */
-        .glass-panel {
-            background: rgba(20, 20, 25, 0.5);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
+function clearDisponiblesCarouselTimer() {
+    if (disponiblesCarouselTimer) {
+        clearInterval(disponiblesCarouselTimer);
+        disponiblesCarouselTimer = null;
+    }
+}
 
-        .glass-card-interactive {
-            background: rgba(20, 20, 25, 0.4);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+function renderDisponiblesVisualState(state, options = {}) {
+    const visual = document.getElementById('hero-disponibles-visual');
+    if (!visual) return;
 
-        .glass-card-interactive:hover {
-            transform: translateY(-2px);
-            border-color: rgba(251, 191, 36, 0.2);
-            box-shadow: 0 15px 30px -10px rgba(251, 191, 36, 0.08);
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 99px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        /* Hide Scrollbar for Table Container */
-        .table-wrap::-webkit-scrollbar {
-            height: 4px;
-        }
-
-        /* Input Glass Styles */
-        .glass-input {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.2s ease;
-        }
-        .glass-input:focus {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: #fbbf24;
-            box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.25);
-            outline: none;
-        }
-
-        /* Status Badges */
-        .badge-yate {
-            background: rgba(251, 191, 36, 0.08);
-            color: #fde68a;
-            border: 1px solid rgba(251, 191, 36, 0.15);
-        }
-
-        .badge-lancha {
-            background: rgba(14, 165, 233, 0.08);
-            color: #bae6fd;
-            border: 1px solid rgba(14, 165, 233, 0.15);
-        }
-    </style>
-</head>
-<body class="min-h-screen flex relative overflow-x-hidden antialiased" x-data="adminApp()">
-
-    <!-- Ambient Orbs -->
-    <div class="orb-glow-1"></div>
-    <div class="orb-glow-2"></div>
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar w-72 min-h-screen p-6 fixed lg:static flex flex-col justify-between bg-zinc-950/80 backdrop-blur-xl border-r border-white/5 z-50 transition-transform duration-300 lg:translate-x-0" 
-           :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }">
-        
-        <div class="flex flex-col">
-            <!-- Brand Logup -->
-            <div class="flex items-center justify-between mb-10 pb-6 border-b border-white/5">
-                <div class="flex items-center gap-3 group">
-                    <span class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-zinc-950 font-bold text-lg shadow-[0_4px_20px_-4px_rgba(245,158,11,0.5)]">
-                        ⛵
-                    </span>
-                    <div>
-                        <p class="text-[9px] uppercase tracking-[0.4em] text-amber-400/80 font-bold font-display">Elite Yacht</p>
-                        <h1 class="text-xl font-bold tracking-[0.2em] text-white font-display">ADMIN</h1>
-                    </div>
+    if (state === 'loading') {
+        visual.innerHTML = `
+            <div class="today-available-stage today-available-stage--loading">
+                <div class="today-available-stage-media shimmer"></div>
+                <div class="today-available-stage-body">
+                    <div class="skeleton-line w-24"></div>
+                    <div class="skeleton-line w-40 mt-3"></div>
                 </div>
-                <!-- Mobile Close Button -->
-                <button @click="sidebarOpen = false" class="lg:hidden text-slate-400 hover:text-white p-1 rounded-xl hover:bg-white/5 transition" aria-label="Cerrar menú">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
             </div>
+        `;
+        return;
+    }
 
-            <!-- Navigation Links -->
-            <nav class="space-y-2">
-                <a href="#" class="flex items-center gap-3.5 bg-amber-400 text-zinc-950 px-5 py-3.5 rounded-2xl font-semibold shadow-[0_8px_20px_-6px_rgba(245,158,11,0.4)] transition duration-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V18zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="#reservas-section" class="flex items-center gap-3.5 hover:bg-white/5 px-5 py-3.5 rounded-2xl text-slate-400 hover:text-white transition duration-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                    </svg>
-                    <span>Reservas</span>
-                </a>
-            </nav>
+    if (state === 'error') {
+        visual.innerHTML = `
+            <div class="today-available-stage today-available-stage--empty">
+                <div class="today-available-stage-copy-only">
+                    <p class="today-available-stage-type">Disponibles hoy</p>
+                    <h4 class="today-available-stage-name">No se pudo consultar la disponibilidad.</h4>
+                    <p class="today-available-stage-meta">Revisa la conexión con Firestore para volver a cargar los yates y lanchas libres.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    if (state === 'empty') {
+        visual.innerHTML = `
+            <div class="today-available-stage today-available-stage--empty">
+                <div class="today-available-stage-copy-only">
+                    <p class="today-available-stage-type">Disponibles hoy</p>
+                    <h4 class="today-available-stage-name">Todo reservado por hoy</h4>
+                    <p class="today-available-stage-meta">Todas las embarcaciones ya tienen al menos una reserva en el día en curso.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const yate = options.yate;
+    const total = options.total || 0;
+    const current = options.current || 0;
+    if (!yate) return;
+
+    visual.innerHTML = `
+        <div class="today-available-stage">
+            <div class="today-available-stage-media-wrap">
+                <img src="${escapeHtml(yate.img)}" alt="${escapeHtml(`${yate.nombre} disponible hoy`)}" class="today-available-stage-media" loading="eager">
+                <div class="today-available-stage-overlay"></div>
+                <span class="today-available-stage-index">${current + 1}/${total}</span>
+                <div class="today-available-stage-copy">
+                    <p class="today-available-stage-type">${escapeHtml(yate.tipo)} disponible</p>
+                    <h4 class="today-available-stage-name">${escapeHtml(yate.nombre)}</h4>
+                    <p class="today-available-stage-meta">${escapeHtml(yate.capacidad || 'Experiencia privada disponible')}</p>
+                    <p class="today-available-stage-price">${escapeHtml(yate.precio || '')}</p>
+                </div>
+            </div>
         </div>
+    `;
+}
 
-        <!-- System User Status & Logout -->
-        <div class="pt-6 border-t border-white/5 flex flex-col gap-4">
-            <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300 flex items-center justify-center text-xs font-semibold">👨‍✈️</span>
-                <div>
-                    <p class="text-xs font-semibold text-white">Elite Administrator</p>
-                    <div class="flex items-center gap-1.5 mt-0.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 live-dot"></span>
-                        <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Conectado</span>
-                    </div>
+function updateDisponiblesActiveState() {
+    const pills = document.querySelectorAll('.today-available-pill[data-yate-id]');
+    pills.forEach((pill, index) => {
+        if (index === disponiblesCarouselIndex) {
+            pill.classList.add('is-active');
+        } else {
+            pill.classList.remove('is-active');
+        }
+    });
+}
+
+function renderDisponiblesVisual() {
+    if (!disponiblesActivos.length) {
+        clearDisponiblesCarouselTimer();
+        return;
+    }
+
+    if (disponiblesCarouselIndex >= disponiblesActivos.length) {
+        disponiblesCarouselIndex = 0;
+    }
+
+    const yate = disponiblesActivos[disponiblesCarouselIndex];
+    renderDisponiblesVisualState('ready', {
+        yate,
+        total: disponiblesActivos.length,
+        current: disponiblesCarouselIndex
+    });
+    updateDisponiblesActiveState();
+}
+
+function startDisponiblesCarousel() {
+    clearDisponiblesCarouselTimer();
+
+    if (disponiblesActivos.length <= 1) {
+        return;
+    }
+
+    disponiblesCarouselTimer = setInterval(() => {
+        if (!disponiblesActivos.length) return;
+        disponiblesCarouselIndex = (disponiblesCarouselIndex + 1) % disponiblesActivos.length;
+        renderDisponiblesVisual();
+    }, 3600);
+}
+
+function syncDisponiblesVisual(disponiblesHoy) {
+    const previousActiveId = disponiblesActivos[disponiblesCarouselIndex]?.id ?? null;
+    disponiblesActivos = disponiblesHoy.slice();
+
+    if (!disponiblesActivos.length) {
+        disponiblesCarouselIndex = 0;
+        clearDisponiblesCarouselTimer();
+        renderDisponiblesVisualState('empty');
+        updateDisponiblesActiveState();
+        return;
+    }
+
+    const preservedIndex = previousActiveId !== null
+        ? disponiblesActivos.findIndex(yate => Number(yate.id) === Number(previousActiveId))
+        : -1;
+
+    disponiblesCarouselIndex = preservedIndex >= 0
+        ? preservedIndex
+        : Math.min(disponiblesCarouselIndex, disponiblesActivos.length - 1);
+
+    renderDisponiblesVisual();
+    startDisponiblesCarousel();
+}
+
+function setDisponibleDestacado(yateId) {
+    const foundIndex = disponiblesActivos.findIndex(yate => Number(yate.id) === Number(yateId));
+    if (foundIndex === -1) return;
+    disponiblesCarouselIndex = foundIndex;
+    renderDisponiblesVisual();
+    startDisponiblesCarousel();
+}
+
+function renderDisponiblesHoy() {
+    const availabilityPanel = document.getElementById('hero-live-availability');
+    const badge = document.getElementById('hero-panel-badge');
+    const count = document.getElementById('hero-disponibles-count');
+    const list = document.getElementById('hero-disponibles-hoy');
+
+    if (!list) return;
+
+    availabilityPanel?.classList.remove('is-empty', 'is-loading');
+
+    if (syncMode === 'Error') {
+        availabilityPanel?.classList.add('is-empty');
+        if (badge) badge.textContent = 'Sync no disponible';
+        if (count) count.textContent = '--';
+        list.innerHTML = '<div class="today-available-empty">No se pudo consultar la disponibilidad del día.</div>';
+        clearDisponiblesCarouselTimer();
+        renderDisponiblesVisualState('error');
+        return;
+    }
+
+    if (!reservasSincronizadas) {
+        availabilityPanel?.classList.add('is-loading');
+        if (badge) badge.textContent = 'Consultando hoy';
+        if (count) count.textContent = '...';
+        list.innerHTML = '<div class="today-available-loading">Consultando embarcaciones libres de hoy...</div>';
+        clearDisponiblesCarouselTimer();
+        renderDisponiblesVisualState('loading');
+        return;
+    }
+
+    const disponiblesHoy = getYatesDisponiblesHoy();
+    const totalEmbarcaciones = yates.length;
+
+    if (badge) {
+        badge.textContent = disponiblesHoy.length > 0
+            ? `${disponiblesHoy.length} disponible${disponiblesHoy.length === 1 ? '' : 's'} hoy`
+            : 'Sin disponibilidad hoy';
+    }
+
+    if (count) {
+        count.textContent = `${disponiblesHoy.length}/${totalEmbarcaciones}`;
+    }
+
+    if (!disponiblesHoy.length) {
+        availabilityPanel?.classList.add('is-empty');
+        list.innerHTML = '<div class="today-available-empty">Todas las lanchas y yates ya tienen reserva hoy.</div>';
+        syncDisponiblesVisual([]);
+        return;
+    }
+
+    list.innerHTML = disponiblesHoy.map((yate, index) => `
+        <button type="button" class="today-available-pill ${index === disponiblesCarouselIndex ? 'is-active' : ''}" onclick="setDisponibleDestacado(${Number(yate.id)})" data-yate-id="${Number(yate.id)}">
+            <span class="today-available-pill-thumb">
+                <img src="${escapeHtml(yate.img)}" alt="${escapeHtml(yate.nombre)}" class="today-available-pill-image" loading="lazy">
+            </span>
+            <span class="today-available-pill-copy">
+                <span class="today-available-pill-type">${escapeHtml(yate.tipo)}</span>
+                <span class="today-available-pill-name">${escapeHtml(yate.nombre)}</span>
+            </span>
+        </button>
+    `).join('');
+
+    syncDisponiblesVisual(disponiblesHoy);
+}
+
+function renderHeroPanel() {
+    const heroPanel = document.getElementById('hero-feature-panel');
+    const heroTitle = document.getElementById('hero-panel-title');
+    const heroBadge = document.getElementById('hero-panel-badge');
+
+    if (heroPanel) heroPanel.style.display = '';
+    if (heroTitle) heroTitle.textContent = 'Disponibilidad en tiempo real';
+
+    if (heroBadge) {
+        if (syncMode === 'Error') {
+            heroBadge.textContent = 'Sync no disponible';
+        } else if (!reservasSincronizadas) {
+            heroBadge.textContent = 'Consultando hoy';
+        } else {
+            const disponiblesHoy = getYatesDisponiblesHoy().length;
+            heroBadge.textContent = disponiblesHoy > 0
+                ? `${disponiblesHoy} disponible${disponiblesHoy === 1 ? '' : 's'} hoy`
+                : 'Sin disponibilidad hoy';
+        }
+    }
+
+    renderDisponiblesHoy();
+}
+
+function renderFlota() {
+    const grid = document.getElementById('flota-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    yates.forEach(y => {
+        const card = document.createElement('article');
+        card.className = 'card-yate premium-surface rounded-[32px] overflow-hidden group relative';
+
+        const incluyeContenido = Array.isArray(y.incluye)
+            ? y.incluye.join(', ')
+            : (y.incluye || '');
+
+        const incluyeChips = incluyeContenido
+            ? incluyeContenido.split(',').map(item => item.trim()).filter(Boolean).slice(0, 6).map(item => `<span class="include-chip">${escapeHtml(item)}</span>`).join('')
+            : '';
+
+        const incluyeHTML = incluyeContenido
+            ? `
+                <div class="mt-4">
+                    <p class="text-xs uppercase tracking-[0.2em] text-amber-300/80 mb-3">Incluye</p>
+                    <div class="includes-wrap">${incluyeChips}</div>
                 </div>
+            `
+            : '';
+
+        card.innerHTML = `
+            <div class="fleet-media h-72">
+                <span class="fleet-tag">${escapeHtml(y.tipo)}</span>
+                <img src="${y.img}" alt="Renta de ${escapeHtml(y.tipo)} ${escapeHtml(y.nombre)} en Veracruz" class="w-full h-full object-cover">
             </div>
-            <button @click="logout()" class="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 py-3 rounded-xl font-semibold text-xs border border-red-500/15 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                </svg>
-                <span>Cerrar Sesión</span>
-            </button>
-        </div>
-    </aside>
-
-    <!-- MAIN MAIN CONTAINER -->
-    <main class="flex-1 min-h-screen relative z-10 lg:ml-0 flex flex-col overflow-x-hidden">
-        
-        <!-- HEADER MOBILE -->
-        <header class="lg:hidden bg-zinc-950/90 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-white/5 sticky top-0 z-40">
-            <div class="flex items-center gap-3">
-                <button @click="sidebarOpen = true" class="text-slate-400 hover:text-white p-1 rounded-xl hover:bg-white/5 transition" aria-label="Abrir menú">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
-                <h1 class="text-lg font-bold tracking-tight font-display text-white">Panel Admin</h1>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 live-dot"></span>
-                <span class="text-xs text-slate-400 uppercase tracking-widest font-semibold">Live</span>
-            </div>
-        </header>
-
-        <!-- DASHBOARD CONTAINER -->
-        <div class="p-6 md:p-10 flex-1 max-w-7xl mx-auto w-full space-y-8">
-            
-            <!-- ACCESS LOGIN SCREEN -->
-            <div :class="{ 'hidden': isLoggedIn }" class="max-w-md mx-auto py-12">
-                <div class="glass-panel rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden">
-                    <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-400/10 rounded-full blur-2xl"></div>
-
-                    <div class="text-center mb-8">
-                        <span class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-zinc-950 text-2xl font-bold mx-auto mb-4 shadow-[0_8px_30px_rgba(245,158,11,0.3)]">
-                            ⛵
-                        </span>
-                        <h2 class="text-3xl font-bold font-display tracking-tight text-white">Acceso Administrador</h2>
-                        <p class="text-slate-400 text-sm mt-2">Ingresa tus credenciales oficiales de Elite</p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Usuario / Correo</label>
-                            <input id="email" type="email" placeholder="nombre@correo.com" class="w-full glass-input rounded-2xl px-5 py-4 text-white placeholder-slate-500 font-medium">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Contraseña</label>
-                            <input id="password" type="password" placeholder="••••••••••••" class="w-full glass-input rounded-2xl px-5 py-4 text-white placeholder-slate-500 font-medium">
-                        </div>
-                        
-                        <button @click="login()" class="w-full bg-amber-400 hover:bg-amber-300 text-zinc-950 py-4.5 rounded-2xl font-bold text-lg mt-6 shadow-[0_12px_30px_-6px_rgba(245,158,11,0.35)] transition-all hover:scale-[1.01]">
-                            Entrar al Panel
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- DASHBOARD GRAPHICAL CONTENT -->
-            <div :class="{ 'hidden': !isLoggedIn }" class="space-y-8" x-cloak>
-                
-                <!-- TOP HEADER BAR -->
-                <div class="hidden lg:flex items-center justify-between pb-4 border-b border-white/5">
+            <div class="p-5 sm:p-6">
+                <div class="flex items-start justify-between gap-4">
                     <div>
-                        <h2 class="text-3xl font-bold tracking-tight font-display text-white">Dashboard Comercial</h2>
-                        <p class="text-slate-400 text-sm mt-1">Estructura innovadora de rendimiento y reservaciones en vivo</p>
+                        <h3 class="text-2xl font-bold tracking-[-0.03em]">${escapeHtml(y.nombre)}</h3>
+                        <p class="text-slate-300 mt-2">${escapeHtml(y.tipo)} • ${escapeHtml(y.capacidad)}</p>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <button @click="exportarCSV()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white px-5 py-3 rounded-2xl font-semibold border border-white/5 transition text-sm">
-                            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                            </svg>
-                            <span>Exportar CSV</span>
-                        </button>
-                        <div class="flex items-center gap-2.5 px-4.5 py-3 rounded-2xl bg-zinc-900/50 border border-white/5 text-sm font-semibold">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 live-dot"></span>
-                            <span class="text-slate-300 font-display">CONEXIÓN:</span>
-                            <span class="text-amber-400 font-bold" x-text="syncMode">Live</span>
-                        </div>
+                    <span class="fleet-badge">Elite</span>
+                </div>
+
+                <p class="text-3xl font-bold text-amber-300 mt-5">${escapeHtml(y.precio)}</p>
+
+                <div class="fleet-meta">
+                    <div class="fleet-meta-item">
+                        <span class="fleet-meta-label">Categoría</span>
+                        <span class="fleet-meta-value">${escapeHtml(y.tipo)}</span>
+                    </div>
+                    <div class="fleet-meta-item">
+                        <span class="fleet-meta-label">Capacidad</span>
+                        <span class="fleet-meta-value">${escapeHtml(y.capacidad)}</span>
                     </div>
                 </div>
 
-                <!-- INNOVATIVE KPI CARDS WITH SPARKLINES (AS SHOWN IN DESIGN IMAGE) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    
-                    <!-- KPI 1: RESERVAS -->
-                    <div class="glass-card-interactive rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between h-[170px]">
-                        <div>
-                            <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Reservas YTD</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Reservas registradas</p>
-                        </div>
-                        <div class="flex items-center justify-between my-2.5">
-                            <p class="text-3.5xl font-bold font-display text-white" x-text="allReservas.length">0</p>
-                            <!-- Mini Sparkline Area -->
-                            <div class="w-24 h-10 relative">
-                                <canvas id="sparklineReservas"></canvas>
-                            </div>
-                        </div>
-                        <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-                            <span class="text-slate-400">Meta: <strong class="text-slate-300 font-semibold">20 reservas</strong></span>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/15 text-[10px]">
-                                ▲ +15%
-                            </span>
-                        </div>
-                    </div>
+                ${incluyeHTML}
 
-                    <!-- KPI 2: INGRESOS -->
-                    <div class="glass-card-interactive rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between h-[170px]">
-                        <div>
-                            <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Ingresos YTD</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Estimado por tarifas</p>
-                        </div>
-                        <div class="flex items-center justify-between my-2.5">
-                            <p class="text-2xl font-bold font-display text-amber-400" x-text="kpiIngresosHoy">MX$0</p>
-                            <div class="w-24 h-10 relative">
-                                <canvas id="sparklineIngresos"></canvas>
-                            </div>
-                        </div>
-                        <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-                            <span class="text-slate-400">Meta: <strong class="text-slate-300 font-semibold">MX$25K</strong></span>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-red-500/10 text-red-400 font-bold border border-red-500/15 text-[10px]">
-                                ▼ -5%
-                            </span>
-                        </div>
-                    </div>
+                <button onclick="seleccionarYate(${y.id}); abrirModal()" class="premium-button mt-6 w-full">Reservar este yate</button>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
 
-                    <!-- KPI 3: POPULARIDAD -->
-                    <div class="glass-card-interactive rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between h-[170px]">
-                        <div>
-                            <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Yate Destacado</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Embarcación favorita</p>
-                        </div>
-                        <div class="flex items-center justify-between my-2.5">
-                            <p class="text-[17px] font-bold font-display text-white truncate max-w-[120px]" x-text="kpiYatePopular">La Gozadera</p>
-                            <div class="w-24 h-10 relative">
-                                <canvas id="sparklinePopular"></canvas>
-                            </div>
-                        </div>
-                        <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-                            <span class="text-slate-400">Tasa: <strong class="text-slate-300 font-semibold">Pachanga</strong></span>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/15 text-[10px]">
-                                ▲ +8%
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- KPI 4: OCUPACIÓN -->
-                    <div class="glass-card-interactive rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between h-[170px]">
-                        <div>
-                            <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase">Ocupación Total</p>
-                            <p class="text-[11px] text-slate-500 mt-0.5">Porcentaje global</p>
-                        </div>
-                        <div class="flex items-center justify-between my-2.5">
-                            <p class="text-3.5xl font-bold font-display text-emerald-400" x-text="kpiOcupacion">0%</p>
-                            <div class="w-24 h-10 relative">
-                                <canvas id="sparklineOcupacion"></canvas>
-                            </div>
-                        </div>
-                        <div class="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
-                            <span class="text-slate-400">Meta: <strong class="text-slate-300 font-semibold">80%</strong></span>
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/15 text-[10px]">
-                                ▲ +5%
-                            </span>
-                        </div>
-                    </div>
-
+function renderReservasLoading() {
+    getReservationContainers().forEach(container => {
+        container.innerHTML = `
+            <div class="space-y-3">
+                <div class="premium-surface p-4 rounded-2xl">
+                    <div class="skeleton-line w-2/3"></div>
+                    <div class="skeleton-line w-1/2 mt-3"></div>
                 </div>
-
-                <!-- 3-COLUMN CHARTS LAYOUT (AMIGABLE & INNOVATIVE AS SHOWN IN IMAGE) -->
-                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    
-                    <!-- COLUMN 1: LINE TREND AREA CHART -->
-                    <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between h-[390px] shadow-lg">
-                        <div class="flex items-center justify-between pb-3 border-b border-white/5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-1.5 h-4 bg-amber-400 rounded-full"></span>
-                                <h3 class="text-xs font-bold tracking-wider text-slate-300 uppercase">Tendencia de Reservaciones</h3>
-                            </div>
-                            <span class="text-[9px] text-slate-500 uppercase tracking-widest">Semanal</span>
-                        </div>
-                        <div class="chart-container relative h-[280px] mt-4">
-                            <canvas id="barChart" class="w-full h-full"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- COLUMN 2: DOUGHNUT CHART WITH DYNAMIC CENTRAL NUMBER -->
-                    <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between h-[390px] shadow-lg">
-                        <div class="flex items-center justify-between pb-3 border-b border-white/5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-1.5 h-4 bg-emerald-400 rounded-full"></span>
-                                <h3 class="text-xs font-bold tracking-wider text-slate-300 uppercase">Distribución de Flota</h3>
-                            </div>
-                            <span class="text-[9px] text-slate-500 uppercase tracking-widest">Causas / Clientes</span>
-                        </div>
-                        
-                        <!-- Relative Wrapper to center the total number inside the doughnut hole -->
-                        <div class="relative w-full h-[230px] flex items-center justify-center mt-3">
-                            <canvas id="pieChart"></canvas>
-                            <!-- Central Overlay Label -->
-                            <div class="absolute flex flex-col items-center justify-center pointer-events-none mb-10">
-                                <span class="text-3xl font-bold font-display text-white" x-text="allReservas.length">0</span>
-                                <span class="text-[9px] uppercase tracking-widest text-slate-500 font-bold mt-0.5">Reservas</span>
-                            </div>
-                        </div>
-
-                        <div class="text-center text-[10px] text-slate-500 uppercase tracking-wider font-semibold border-t border-white/5 pt-2">
-                            Yates y lanchas activas en sistema
-                        </div>
-                    </div>
-
-                    <!-- COLUMN 3: HORIZONTAL BAR CHART (HOUR DEMAND) -->
-                    <div class="glass-panel rounded-3xl p-6 flex flex-col justify-between h-[390px] shadow-lg">
-                        <div class="flex items-center justify-between pb-3 border-b border-white/5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-1.5 h-4 bg-sky-400 rounded-full"></span>
-                                <h3 class="text-xs font-bold tracking-wider text-slate-300 uppercase">Demanda por Horarios</h3>
-                            </div>
-                            <span class="text-[9px] text-slate-500 uppercase tracking-widest">Productividad</span>
-                        </div>
-                        <div class="chart-container relative h-[280px] mt-4">
-                            <canvas id="horasChart" class="w-full h-full"></canvas>
-                        </div>
-                    </div>
-
+                <div class="premium-surface p-4 rounded-2xl">
+                    <div class="skeleton-line w-3/4"></div>
+                    <div class="skeleton-line w-2/5 mt-3"></div>
                 </div>
+            </div>
+        `;
+    });
+}
 
-                <!-- MARKETING CAMPAIGNS & TRACKERS PERFORMANCE PANEL -->
-                <div class="glass-panel rounded-3xl p-6 space-y-6 shadow-2xl">
-                    <div class="flex items-center justify-between pb-3 border-b border-white/5">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-1.5 h-4 bg-purple-400 rounded-full"></span>
-                            <h3 class="text-sm font-bold tracking-wider text-slate-300 uppercase font-display">📣 Rendimiento de Campañas Ads & Origen de Tráfico</h3>
-                        </div>
-                        <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Trackers Integrados (UTM, Gclid, Fbclid)</span>
-                    </div>
+function reservationItemTemplate(r) {
+    return `
+        <div class="reservation-item">
+            <div class="reservation-item-content">
+                <p class="reservation-item-title">${escapeHtml(r.yate)}</p>
+                <p class="reservation-item-meta">${escapeHtml(r.fecha)} • ${escapeHtml(formatHourLabel(r.hora))}</p>
+            </div>
+            <button onclick="cancelarReserva('${r.id}')" class="reservation-cancel">Cancelar</button>
+        </div>
+    `;
+}
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <!-- Google Ads Card -->
-                        <div class="glass-card-interactive rounded-2xl p-5 border border-white/5 space-y-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase font-display">Google Ads (SEM)</p>
-                                    <p class="text-[11px] text-slate-500 mt-0.5 font-display">Costo por Clic & Conversión</p>
-                                </div>
-                                <span class="text-2xl text-amber-400/20">🔍</span>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-3 text-xs border-t border-b border-white/5 py-3">
-                                <div>
-                                    <label class="block text-[9px] text-slate-400 uppercase tracking-wider mb-1 font-semibold">Inversión (Spend)</label>
-                                    <input type="number" x-model.number="spendGoogle" @input="saveMktInputs()" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-xs font-mono font-bold focus:border-amber-400 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-[9px] text-slate-400 uppercase tracking-wider mb-1 font-semibold">Clicks Totales</label>
-                                    <input type="number" x-model.number="clicksGoogle" @input="saveMktInputs()" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-xs font-mono font-bold focus:border-amber-400 focus:outline-none">
-                                </div>
-                            </div>
+function emptyReservationTemplate() {
+    return `
+        <div class="premium-surface p-5 rounded-3xl text-center border border-dashed border-white/10">
+            <p class="text-base font-semibold text-white">Aún no hay reservas</p>
+            <p class="text-sm text-slate-400 mt-2">Cuando entren nuevas reservas, aparecerán aquí en tiempo real.</p>
+        </div>
+    `;
+}
 
-                            <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs font-semibold pt-1">
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Leads/Reservas:</span>
-                                    <span class="text-white font-mono" x-text="mktGoogleAds">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Conversión:</span>
-                                    <span class="text-amber-400 font-mono" x-text="'MX$' + getRevenueByCampaign('google').toLocaleString('es-MX')">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>CPC Promedio:</span>
-                                    <span class="text-slate-400 font-mono" x-text="'MX$' + (clicksGoogle > 0 ? (spendGoogle / clicksGoogle).toFixed(2) : '0.00')">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Costo por Lead:</span>
-                                    <span class="text-slate-400 font-mono" x-text="'MX$' + (mktGoogleAds > 0 ? (spendGoogle / mktGoogleAds).toFixed(2) : '0.00')">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300 col-span-2 border-t border-white/5 pt-2">
-                                    <span>ROI / ROAS:</span>
-                                    <span class="font-mono font-bold" :class="getROI('google') >= 0 ? 'text-emerald-400' : 'text-red-400'">
-                                        <span x-text="getROI('google') + '%'"></span> / <span x-text="getROAS('google') + 'x'"></span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+function actualizarResumenReservas() {
+    setText('reservas-total', String(reservas.length));
+    const hoy = todayText();
+    const reservasHoy = reservas.filter(r => String(r.fecha || '').toLowerCase() === hoy).length;
+    setText('reservas-hoy', String(reservasHoy));
+    setText('sync-status', syncMode);
+    renderHeroPanel();
+}
 
-                        <!-- Facebook / Instagram Ads Card -->
-                        <div class="glass-card-interactive rounded-2xl p-5 border border-white/5 space-y-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase font-display">Facebook & Instagram (Meta Ads)</p>
-                                    <p class="text-[11px] text-slate-500 mt-0.5 font-display">Meta Pixel & Conversiones CPC</p>
-                                </div>
-                                <span class="text-2xl text-purple-400/20">📱</span>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-3 text-xs border-t border-b border-white/5 py-3">
-                                <div>
-                                    <label class="block text-[9px] text-slate-400 uppercase tracking-wider mb-1 font-semibold">Inversión (Spend)</label>
-                                    <input type="number" x-model.number="spendMeta" @input="saveMktInputs()" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-xs font-mono font-bold focus:border-amber-400 focus:outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-[9px] text-slate-400 uppercase tracking-wider mb-1 font-semibold">Clicks Totales</label>
-                                    <input type="number" x-model.number="clicksMeta" @input="saveMktInputs()" class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-white text-xs font-mono font-bold focus:border-amber-400 focus:outline-none">
-                                </div>
-                            </div>
+function cargarReservas() {
+    renderReservasLoading();
 
-                            <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs font-semibold pt-1">
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Leads/Reservas:</span>
-                                    <span class="text-white font-mono" x-text="mktSocialAds">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Conversión:</span>
-                                    <span class="text-amber-400 font-mono" x-text="'MX$' + getRevenueByCampaign('meta').toLocaleString('es-MX')">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>CPC Promedio:</span>
-                                    <span class="text-slate-400 font-mono" x-text="'MX$' + (clicksMeta > 0 ? (spendMeta / clicksMeta).toFixed(2) : '0.00')">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Costo por Lead:</span>
-                                    <span class="text-slate-400 font-mono" x-text="'MX$' + (mktSocialAds > 0 ? (spendMeta / mktSocialAds).toFixed(2) : '0.00')">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300 col-span-2 border-t border-white/5 pt-2">
-                                    <span>ROI / ROAS:</span>
-                                    <span class="font-mono font-bold" :class="getROI('meta') >= 0 ? 'text-emerald-400' : 'text-red-400'">
-                                        <span x-text="getROI('meta') + '%'"></span> / <span x-text="getROAS('meta') + 'x'"></span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+    db.collection('reservas').onSnapshot((snapshot) => {
+        reservas = [];
+        snapshot.forEach(doc => {
+            reservas.push({ id: doc.id, ...doc.data() });
+        });
 
-                        <!-- Organic / Direct Web Card -->
-                        <div class="glass-card-interactive rounded-2xl p-5 border border-white/5 space-y-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase font-display">Tráfico Orgánico / Directo</p>
-                                    <p class="text-[11px] text-slate-500 mt-0.5 font-display">Búsqueda orgánica y directo</p>
-                                </div>
-                                <span class="text-2xl text-emerald-400/20">🌐</span>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-3 text-xs border-t border-b border-white/5 py-3">
-                                <div>
-                                    <label class="block text-[9px] text-slate-400 uppercase tracking-wider mb-1 font-semibold">Inversión (Spend)</label>
-                                    <input type="text" value="MX$0.00" disabled class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-slate-400 text-xs font-mono font-bold focus:outline-none cursor-not-allowed">
-                                </div>
-                                <div>
-                                    <label class="block text-[9px] text-slate-400 uppercase tracking-wider mb-1 font-semibold">Clicks Estimados</label>
-                                    <input type="text" value="Orgánico 🌿" disabled class="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-slate-400 text-xs font-mono font-bold focus:outline-none cursor-not-allowed">
-                                </div>
-                            </div>
+        reservas.sort((a, b) => {
+            const aText = `${a.fecha || ''} ${a.hora || ''}`;
+            const bText = `${b.fecha || ''} ${b.hora || ''}`;
+            return aText.localeCompare(bText, 'es');
+        });
 
-                            <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs font-semibold pt-1">
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Leads/Reservas:</span>
-                                    <span class="text-white font-mono" x-text="mktOrganicDirect">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Conversión:</span>
-                                    <span class="text-amber-400 font-mono" x-text="'MX$' + getRevenueByCampaign('organic').toLocaleString('es-MX')">0</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Costo por Clic:</span>
-                                    <span class="text-emerald-400 font-mono font-bold">Gratis</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300">
-                                    <span>Costo por Lead:</span>
-                                    <span class="text-emerald-400 font-mono font-bold">Gratis</span>
-                                </div>
-                                <div class="flex justify-between items-center text-[11px] text-slate-300 col-span-2 border-t border-white/5 pt-2">
-                                    <span>Retorno Directo:</span>
-                                    <span class="text-emerald-400 font-mono font-bold">100% Retorno Neto</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        syncMode = 'Live';
+        reservasSincronizadas = true;
+        mostrarReservasEnLista();
+        actualizarDisponibilidad();
+        actualizarResumenReservas();
+    }, (error) => {
+        console.error('Error al cargar reservas:', error);
+        syncMode = 'Error';
+        reservasSincronizadas = false;
+        setText('sync-status', syncMode);
+        renderHeroPanel();
+        showToast('No se pudieron sincronizar las reservas en este momento.', 'error');
+    });
+}
 
-                    <!-- CHATBOT MIA INTERACTIVE LEAD ORIGINS ROW -->
-                    <div class="border-t border-white/5 pt-6 space-y-4">
-                        <div class="flex items-center justify-between pb-3 border-b border-white/5">
-                            <div class="flex items-center gap-2.5">
-                                <span class="w-1.5 h-4 bg-pink-500 rounded-full"></span>
-                                <h3 class="text-sm font-bold tracking-wider text-slate-300 uppercase font-display">🤖 Prospectos Asistidos por Chatbot Mía (Botpress)</h3>
-                            </div>
-                            <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">Integraciones de Asistente IA</span>
-                        </div>
+function mostrarReservasEnLista() {
+    const containers = getReservationContainers();
+    if (!containers.length) return;
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                            <!-- Mía Webchat -->
-                            <div class="glass-card-interactive rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between h-[150px]">
-                                <div class="absolute top-4 right-4 text-sky-400/20">
-                                    <span class="text-2xl">💬</span>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase font-display">Mía en la Web</p>
-                                    <p class="text-[11px] text-slate-500 mt-0.5">Asistente IA en el sitio web oficial</p>
-                                </div>
-                                <div class="flex items-end justify-between mt-2">
-                                    <div>
-                                        <span class="text-3xl font-bold font-display text-white" x-text="mktChatbotWeb">0</span>
-                                        <span class="text-xs text-slate-400 font-semibold ml-1">leads</span>
-                                    </div>
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-sky-400/10 text-sky-300 font-bold border border-sky-400/15 text-[11px]" x-text="pctChatbotWeb">0%</span>
-                                </div>
-                                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
-                                    <div class="bg-sky-400 h-full rounded-full transition-all duration-500" :style="{ width: pctChatbotWeb }"></div>
-                                </div>
-                            </div>
+    if (reservas.length === 0) {
+        containers.forEach(container => {
+            container.innerHTML = emptyReservationTemplate();
+        });
+        return;
+    }
 
-                            <!-- Mía FB Messenger -->
-                            <div class="glass-card-interactive rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between h-[150px]">
-                                <div class="absolute top-4 right-4 text-blue-400/20">
-                                    <span class="text-2xl">👥</span>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase font-display">Mía en Facebook</p>
-                                    <p class="text-[11px] text-slate-500 mt-0.5">Asistente IA en FB Messenger</p>
-                                </div>
-                                <div class="flex items-end justify-between mt-2">
-                                    <div>
-                                        <span class="text-3xl font-bold font-display text-white" x-text="mktChatbotFB">0</span>
-                                        <span class="text-xs text-slate-400 font-semibold ml-1">leads</span>
-                                    </div>
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-400 font-bold border border-blue-500/15 text-[11px]" x-text="pctChatbotFB">0%</span>
-                                </div>
-                                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
-                                    <div class="bg-blue-500 h-full rounded-full transition-all duration-500" :style="{ width: pctChatbotFB }"></div>
-                                </div>
-                            </div>
+    const html = reservas.map(reservationItemTemplate).join('');
+    containers.forEach(container => {
+        container.innerHTML = html;
+    });
+}
 
-                            <!-- Mía Instagram -->
-                            <div class="glass-card-interactive rounded-2xl p-5 relative overflow-hidden flex flex-col justify-between h-[150px]">
-                                <div class="absolute top-4 right-4 text-pink-500/20">
-                                    <span class="text-2xl">📸</span>
-                                </div>
-                                <div>
-                                    <p class="text-slate-400 text-[10px] font-bold tracking-widest uppercase font-display">Mía en Instagram</p>
-                                    <p class="text-[11px] text-slate-500 mt-0.5">Asistente IA en Mensajes Directos</p>
-                                </div>
-                                <div class="flex items-end justify-between mt-2">
-                                    <div>
-                                        <span class="text-3xl font-bold font-display text-white" x-text="mktChatbotIG">0</span>
-                                        <span class="text-xs text-slate-400 font-semibold ml-1">leads</span>
-                                    </div>
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-gradient-to-tr from-amber-500/10 via-red-500/10 to-pink-500/10 text-pink-300 font-bold border border-pink-500/15 text-[11px]" x-text="pctChatbotIG">0%</span>
-                                </div>
-                                <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-3">
-                                    <div class="bg-gradient-to-r from-amber-400 via-red-500 to-pink-500 h-full rounded-full transition-all duration-500" :style="{ width: pctChatbotIG }"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+function obtenerHorasReservadas(yateId, fecha) {
+    if (!yateId || !fecha) return [];
+    // Restricción: Si la lancha/yate ya tiene cualquier reserva ese día, se ocupa por completo
+    const tieneReserva = reservas.some(r => Number(r.yateId) === Number(yateId) && r.fecha === fecha);
+    if (tieneReserva) {
+        // Bloquear todos los horarios
+        return ['10:00', '11:00', '12:00', '13:00'];
+    }
+    return [];
+}
 
-                <!-- 📊 TRACKER GEOLOCALIZACIÓN Y DISPOSITIVOS PANEL -->
-                <div class="glass-panel rounded-3xl p-6 space-y-6 shadow-2xl">
-                    <div class="flex items-center justify-between pb-3 border-b border-white/5">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-1.5 h-4 bg-sky-400 rounded-full"></span>
-                            <h3 class="text-sm font-bold tracking-wider text-slate-300 uppercase font-display">📊 Inteligencia de Tráfico, Geolocalización & Dispositivos</h3>
-                        </div>
-                        <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold font-mono">Real-time Geolocalización & userAgent</span>
-                    </div>
+function actualizarDisponibilidad() {
+    if (fechaPicker) fechaPicker.redraw();
+    const yateId = parseInt(document.getElementById('select-yate')?.value || '', 10);
+    const fecha = document.getElementById('fecha')?.value || '';
+    const horaSelect = document.getElementById('hora');
+    const availability = document.getElementById('availability-status');
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Columna 1: Geografía & Origen (Estados de México / Países) -->
-                        <div class="space-y-4">
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                                <span>🌎</span> Regiones de Tráfico (Estados de México y Países)
-                            </h4>
-                            <div class="space-y-3.5 max-h-[340px] overflow-y-auto pr-1">
-                                <template x-for="(count, name) in geoStats" :key="name">
-                                    <div class="glass-panel p-3.5 rounded-2xl border border-white/5 space-y-2">
-                                        <div class="flex items-center justify-between text-xs font-semibold">
-                                            <span class="text-slate-200 flex items-center gap-2">
-                                                <span class="text-sm">📍</span>
-                                                <span x-text="name"></span>
-                                            </span>
-                                            <span class="text-amber-400 font-mono"><span x-text="count"></span> leads</span>
-                                        </div>
-                                        <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                                            <div class="bg-gradient-to-r from-amber-400 to-amber-500 h-full rounded-full" 
-                                                 :style="{ width: Math.min(Math.round((count / (allReservas.length || 1)) * 100), 100) + '%' }"></div>
-                                        </div>
-                                        <div class="flex justify-between items-center text-[10px] text-slate-500 font-mono">
-                                            <span>Participación de mercado</span>
-                                            <span x-text="Math.round((count / (allReservas.length || 1)) * 100) + '%'"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                                <template x-if="Object.keys(geoStats).length === 0">
-                                    <div class="text-center py-8 text-slate-500 text-xs">
-                                        No hay datos de geolocalización registrados aún.
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
+    if (!horaSelect || !availability) {
+        renderHeroPanel();
+        return;
+    }
 
-                        <!-- Columna 2: Clasificación de Dispositivos -->
-                        <div class="space-y-4">
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                                <span>📱</span> Clasificación de Dispositivos
-                            </h4>
-                            <div class="space-y-3.5 max-h-[340px] overflow-y-auto pr-1">
-                                <template x-for="(count, name) in deviceStats" :key="name">
-                                    <div class="glass-panel p-3.5 rounded-2xl border border-white/5 space-y-2">
-                                        <div class="flex items-center justify-between text-xs font-semibold">
-                                            <span class="text-slate-200 flex items-center gap-2">
-                                                <span x-text="name.includes('iOS') || name.includes('Mac') || name.includes('iPad') ? '🍎' : name.includes('Android') ? '🤖' : name.includes('Windows') ? '🪟' : name.includes('Linux') ? '🐧' : '💻'"></span>
-                                                <span x-text="name"></span>
-                                            </span>
-                                            <span class="text-sky-400 font-mono"><span x-text="count"></span> leads</span>
-                                        </div>
-                                        <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                                            <div class="bg-gradient-to-r from-sky-400 to-sky-500 h-full rounded-full" 
-                                                 :style="{ width: Math.min(Math.round((count / (allReservas.length || 1)) * 100), 100) + '%' }"></div>
-                                        </div>
-                                        <div class="flex justify-between items-center text-[10px] text-slate-500 font-mono">
-                                            <span>Proporción del total</span>
-                                            <span x-text="Math.round((count / (allReservas.length || 1)) * 100) + '%'"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                                <template x-if="Object.keys(deviceStats).length === 0">
-                                    <div class="text-center py-8 text-slate-500 text-xs">
-                                        No hay datos de dispositivos registrados aún.
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                </div>
+    if (!fecha) {
+        availability.classList.remove('state-warning', 'state-danger', 'state-success');
+        availability.textContent = 'Selecciona una embarcación y una fecha para ver horarios disponibles.';
+        renderHeroPanel();
+        return;
+    }
 
-                <!-- 🗺️ MAPAS DE DISTRIBUCIÓN GEOGRÁFICA (MÉXICO Y MUNDO) -->
-                <div class="glass-panel rounded-3xl p-6 space-y-6 shadow-2xl">
-                    <div class="flex items-center justify-between pb-3 border-b border-white/5">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-1.5 h-4 bg-amber-400 rounded-full"></span>
-                            <h3 class="text-sm font-bold tracking-wider text-slate-300 uppercase font-display">🗺️ Mapas de Distribución Geográfica (México y Mundo)</h3>
-                        </div>
-                        <span class="text-[9px] text-slate-500 uppercase tracking-widest font-semibold font-mono">Visualización Interactiva de Leads</span>
-                    </div>
+    // 1. Obtener la disponibilidad de TODA la flota para esta fecha
+    const reservedYatesIds = new Set();
+    reservas.forEach(r => {
+        if (r.fecha === fecha && r.yateId) {
+            reservedYatesIds.add(Number(r.yateId));
+        }
+    });
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <!-- Mapa 1: República Mexicana -->
-                        <div class="space-y-4">
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                                <span>🇲🇽 Estados de México</span>
-                                <span class="text-[10px] text-slate-500 font-mono font-normal">Vista por Subdivisiones</span>
-                            </h4>
-                            <div class="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-center min-h-[320px] relative overflow-hidden bg-zinc-950/20">
-                                <div id="map-mexico" class="w-full h-[320px] flex items-center justify-center">
-                                    <span class="text-xs text-slate-500 animate-pulse">Cargando mapa de México...</span>
-                                </div>
-                            </div>
-                        </div>
+    const disponiblesHoyYates = yates.filter(y => !reservedYatesIds.has(Number(y.id)));
+    const totalDisponibles = disponiblesHoyYates.length;
 
-                        <!-- Mapa 2: Mapa Mundial -->
-                        <div class="space-y-4">
-                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                                <span>🌐 Países del Mundo</span>
-                                <span class="text-[10px] text-slate-500 font-mono font-normal">Vista Global</span>
-                            </h4>
-                            <div class="glass-panel p-4 rounded-2xl border border-white/5 flex items-center justify-center min-h-[320px] relative overflow-hidden bg-zinc-950/20">
-                                <div id="map-world" class="w-full h-[320px] flex items-center justify-center">
-                                    <span class="text-xs text-slate-500 animate-pulse">Cargando mapa mundial...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    // 2. Si no hay yate seleccionado aún
+    if (isNaN(yateId) || yateId <= 0) {
+        availability.classList.remove('state-warning', 'state-danger', 'state-success');
+        
+        if (totalDisponibles === 0) {
+            availability.classList.add('state-danger');
+            availability.textContent = 'Todas nuestras embarcaciones (5/5) están ocupadas para este día. Por favor selecciona otra fecha.';
+        } else if (totalDisponibles === 1) {
+            availability.classList.add('state-warning');
+            availability.textContent = `¡Atención! Queda solo 1 lancha disponible para esta fecha: ${disponiblesHoyYates[0].nombre}. Elígela en el menú superior para reservar.`;
+        } else {
+            availability.classList.add('state-success');
+            const nombresDisponibles = disponiblesHoyYates.map(y => y.nombre).join(', ');
+            availability.textContent = `Hay ${totalDisponibles} embarcaciones disponibles para esta fecha: ${nombresDisponibles}. Selecciona una para continuar.`;
+        }
+        
+        Array.from(horaSelect.options).forEach(opt => {
+            if (opt.value) {
+                opt.disabled = true;
+                opt.textContent = `${formatHourLabel(opt.value)} (Elige yate primero)`;
+            }
+        });
+        horaSelect.value = '';
+        renderHeroPanel();
+        return;
+    }
 
-                <!-- DYNAMIC DATA TABLE PANEL -->
-                <section id="reservas-section" class="glass-panel rounded-3xl overflow-hidden shadow-2xl">
-                    
-                    <!-- Table Header Controls -->
-                    <div class="px-6 py-5.5 bg-zinc-900/40 border-b border-white/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div class="flex items-center gap-3">
-                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]"></span>
-                            <h3 class="text-lg font-bold font-display text-white">Registro de Reservaciones Activas</h3>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <button @click="borrarTodasLasReservas()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2.5 rounded-xl font-semibold border border-red-500/15 transition text-xs">
-                                Borrar Todo
-                            </button>
-                        </div>
-                    </div>
+    // 3. Si hay yate seleccionado
+    const horasReservadas = obtenerHorasReservadas(yateId, fecha);
+    let horasDisponibles = 0;
 
-                    <!-- Responsive Table Wrapping Container -->
-                    <div class="overflow-x-auto table-wrap">
-                        <table class="w-full text-sm border-collapse min-w-[700px]">
-                            <thead>
-                                <tr class="bg-zinc-900/50 text-slate-400 font-semibold border-b border-white/5">
-                                    <th class="px-6 py-4.5 text-left text-xs uppercase tracking-wider">Embarcación</th>
-                                    <th class="px-6 py-4.5 text-left text-xs uppercase tracking-wider">Fecha Paseo</th>
-                                    <th class="px-6 py-4.5 text-left text-xs uppercase tracking-wider">Hora</th>
-                                    <th class="px-6 py-4.5 text-left text-xs uppercase tracking-wider">Cliente</th>
-                                    <th class="px-6 py-4.5 text-left text-xs uppercase tracking-wider">Cumpleaños</th>
-                                    <th class="px-6 py-4.5 text-center text-xs uppercase tracking-wider">Acciones</th>
+    Array.from(horaSelect.options).forEach(option => {
+        if (!option.value) return;
+        const reservada = horasReservadas.includes(option.value);
+        option.disabled = reservada;
+        option.textContent = reservada ? `${formatHourLabel(option.value)} • Reservado` : formatHourLabel(option.value);
+        if (reservada && horaSelect.value === option.value) {
+            horaSelect.value = '';
+        }
+        if (!reservada) {
+            horasDisponibles += 1;
+        }
+    });
+
+    availability.classList.remove('state-warning', 'state-danger', 'state-success');
+
+    if (horasDisponibles === 0) {
+        availability.classList.add('state-danger');
+        
+        if (totalDisponibles === 0) {
+            availability.textContent = 'Todas nuestras embarcaciones (5/5) están ocupadas para este día. Por favor selecciona otra fecha.';
+        } else if (totalDisponibles === 1) {
+            availability.textContent = `Esta embarcación ya está ocupada. Solo queda 1 lancha disponible para esta fecha: ${disponiblesHoyYates[0].nombre}. Elígela en el menú superior para reservar.`;
+        } else {
+            const nombresDisponibles = disponiblesHoyYates.map(y => y.nombre).join(', ');
+            availability.textContent = `Esta embarcación ya está ocupada. Quedan ${totalDisponibles} embarcaciones disponibles para esta fecha: ${nombresDisponibles}. Puedes elegir una de ellas en el menú superior.`;
+        }
+        renderHeroPanel();
+        return;
+    }
+
+    if (totalDisponibles === 1) {
+        availability.classList.add('state-warning');
+        availability.textContent = `¡Tu embarcación seleccionada está disponible! (Queda solo 1 lancha disponible para esta fecha: ${yates.find(y => y.id === yateId).nombre}). Todos los horarios listos.`;
+    } else {
+        availability.classList.add('state-success');
+        const otrosDisponibles = disponiblesHoyYates.filter(y => Number(y.id) !== Number(yateId)).map(y => y.nombre);
+        if (otrosDisponibles.length > 0) {
+            availability.textContent = `¡Tu embarcación seleccionada está disponible! Todos los horarios listos. (También disponibles para esta fecha: ${otrosDisponibles.join(', ')}).`;
+        } else {
+            availability.textContent = '¡Tu de embarcación seleccionada está disponible! Todos los horarios listos.';
+        }
+    }
+    renderHeroPanel();
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.className = `toast ${type}`;
+    toast.classList.remove('hidden');
+
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
+
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.classList.add('hidden'), 220);
+    }, 2600);
+}
+
+function setLoadingState(isLoading) {
+    const btn = document.getElementById('confirmar-btn');
+    if (!btn) return;
+
+    btn.disabled = isLoading;
+    btn.style.opacity = isLoading ? '0.75' : '1';
+    btn.style.cursor = isLoading ? 'wait' : 'pointer';
+    btn.textContent = isLoading ? 'Confirmando...' : 'Confirmar Reserva';
+}
+
+function getMarinaInfo(yateId) {
+    const id = Number(yateId);
+    if (id === 3 || id === 5) {
+        return {
+            nombre: "Marina Estero 42 (Isla del Amor)",
+            ubicacion: "Estero 42, Isla del Amor, Boca del Río / Alvarado, Ver.",
+            mapLink: "https://www.google.com/maps/search/?api=1&query=Marina+Estero+42+Isla+del+Amor"
+        };
+    } else {
+        return {
+            nombre: "Marina El Dorado",
+            ubicacion: "Blvrd El Dorado 2, Boca del Río / Alvarado, Ver. (Plaza El Dorado)",
+            mapLink: "https://www.google.com/maps/search/?api=1&query=Marina+El+Dorado+Boca+del+Rio"
+        };
+    }
+}
+
+async function realizarReserva() {
+    const nombreCliente = (document.getElementById('nombre-cliente')?.value || '').trim();
+    const telefono = (document.getElementById('telefono-cliente')?.value || '').trim();
+    const correo = (document.getElementById('correo-cliente')?.value || '').trim();
+    const reservaTexto = (document.getElementById('reserva-textbox')?.value || '').trim();
+    const fechaCumpleanos = document.getElementById('fecha-cumpleanos')?.value || '';
+    const yateId = parseInt(document.getElementById('select-yate').value, 10);
+    const fecha = document.getElementById('fecha').value;
+    const hora = document.getElementById('hora').value;
+
+    if (!nombreCliente || nombreCliente.length < 4) {
+        showToast('Ingresa el nombre completo del cliente.', 'error');
+        return;
+    }
+
+    if (normalizePhoneForWhatsApp(telefono).length < 10) {
+        showToast('Ingresa un número de contacto válido.', 'error');
+        return;
+    }
+
+    const validateEmail = (email) => {
+        return String(email)
+            .toLowerCase()
+            .match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+    };
+
+    if (!correo || !validateEmail(correo)) {
+        showToast('Ingresa un correo electrónico válido para recibir tus instrucciones.', 'error');
+        return;
+    }
+
+    const birthdayError = validateBirthday(fechaCumpleanos);
+    if (birthdayError) {
+        showToast(birthdayError, 'error');
+        return;
+    }
+
+    if (!yateId || !fecha || !hora) {
+        showToast('Completa todos los campos antes de confirmar.', 'error');
+        return;
+    }
+
+    if (!reservaTexto) {
+        showToast('Confirma la lancha o yate en el campo de reserva.', 'error');
+        return;
+    }
+
+    const yate = yates.find(y => y.id === yateId);
+    const embarcacionReservada = reservaTexto || yate.nombre;
+
+    try {
+        setLoadingState(true);
+
+        // Actualizar geolocalización al momento del envío para capturar cambios del sensor/extensión del navegador
+        try {
+            const currentGeo = await getGeoLocation();
+            trackingSnapshot = { ...trackingSnapshot, ...currentGeo };
+        } catch (geoErr) {
+            console.warn('No se pudo actualizar la geolocalización en tiempo real:', geoErr);
+        }
+
+        const snapshot = await db.collection('reservas')
+            .where('yateId', '==', yateId)
+            .where('fecha', '==', fecha)
+            .get();
+
+        if (!snapshot.empty) {
+            showToast('Esta embarcación ya está reservada para este día. Por favor selecciona otra fecha.', 'error');
+            setLoadingState(false);
+            actualizarDisponibilidad();
+            return;
+        }
+
+        const reservaRef = db.collection('reservas').doc();
+        const payload = {
+            reservationId: reservaRef.id,
+            nombreCliente,
+            telefono,
+            correo,
+            fechaCumpleanos,
+            reserva: embarcacionReservada,
+            embarcacionReservada,
+            yate: embarcacionReservada,
+            yateId,
+            fecha,
+            hora,
+            crm: {
+                status: 'new',
+                crmStage: 'reservation_requested',
+                source: 'website',
+                channel: 'reservation_modal',
+                deviceType: getCRMDeviceType(),
+                tracking: trackingSnapshot
+            },
+            status: 'new',
+            crmStage: 'reservation_requested',
+            source: 'website',
+            tracking: trackingSnapshot,
+            whatsappLink: getWhatsAppLink({ nombreCliente, telefono, yate: embarcacionReservada, fecha, hora }),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await reservaRef.set(payload);
+
+        // --- SISTEMA AUTOMÁTICO DE CORREOS (Firestore /mail collection trigger) ---
+        const marina = getMarinaInfo(yateId);
+        const siteUrl = window.location.origin || 'https://rentayatesveracruz.mx';
+        const inclList = yate.incluye ? yate.incluye.split(',').map(i => i.trim()).filter(Boolean) : [];
+        const includesHtml = inclList.map(inc => `
+            <li style="margin-bottom: 6px; color: #d4d4d8; font-size: 14px;">
+                <span style="color: #fbbf24; margin-right: 8px;">✦</span> ${inc}
+            </li>
+        `).join('');
+
+        const emailHtml = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Confirmación de Reserva • Elite Yacht Rentals</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #020617; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #f4f4f5; -webkit-text-size-adjust: 100%;">
+                <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #020617; padding: 20px 10px;">
+                    <tr>
+                        <td align="center">
+                            <!-- Main Container Card -->
+                            <table width="100%" class="container" style="max-width: 600px; background-color: #09090b; border: 1px solid #27272a; border-radius: 24px; overflow: hidden; border-collapse: separate;">
+                                <!-- Header Logo / Brand -->
+                                <tr>
+                                    <td align="center" style="padding: 30px 20px; background-color: #09090b; border-bottom: 1px solid #18181b;">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td align="center" style="font-size: 26px; font-weight: bold; letter-spacing: 4px; color: #ffffff; text-transform: uppercase;">
+                                                    ⛵ ELITE YACHT
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td align="center" style="font-size: 10px; letter-spacing: 6px; color: #fbbf24; text-transform: uppercase; padding-top: 4px; font-weight: 600;">
+                                                    Rentals • Veracruz
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody id="reservas-table" class="divide-y divide-white/5">
-                                <!-- Dynamic Render rows via JS renderTable() -->
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-            </div>
-
-        </div>
-
-        <!-- FOOTER -->
-        <footer class="p-6 text-center text-xs text-slate-500 border-t border-white/5 bg-zinc-950/20">
-            <p>© 2026 Elite Yacht Rentals • Veracruz, México • Panel de Administración Seguro</p>
-        </footer>
-
-    </main>
-
-    <script>
-        function adminApp() {
-            return {
-                isLoggedIn: false,
-                sidebarOpen: false,
-                allReservas: [],
-                barChartInstance: null,
-                pieChartInstance: null,
-                horasChartInstance: null,
-
-                kpiReservasHoy: 0,
-                kpiIngresosHoy: '$0',
-                kpiYatePopular: '—',
-                kpiOcupacion: '0%',
-
-                // Marketing tracking variables
-                mktGoogleAds: 0,
-                mktSocialAds: 0,
-                mktOrganicDirect: 0,
-                pctGoogleAds: '0%',
-                pctSocialAds: '0%',
-                pctOrganicDirect: '0%',
-
-                // Chatbot Mía tracking variables
-                mktChatbotWeb: 0,
-                mktChatbotFB: 0,
-                mktChatbotIG: 0,
-                pctChatbotWeb: '0%',
-                pctChatbotFB: '0%',
-                pctChatbotIG: '0%',
-
-                geoStats: {},
-                deviceStats: {},
-
-                // Marketing inputs (persisted in localStorage)
-                spendGoogle: parseInt(localStorage.getItem('spend_google')) || 1500,
-                clicksGoogle: parseInt(localStorage.getItem('clicks_google')) || 250,
-                spendMeta: parseInt(localStorage.getItem('spend_meta')) || 1200,
-                clicksMeta: parseInt(localStorage.getItem('clicks_meta')) || 200,
-
-                init() {
-                    // Expose dynamic helper methods to window scope for native inline onclick triggers
-                    window.borrarReserva = (id) => this.borrarReserva(id);
-                    window.agregarAGoogleCalendar = (yate, fecha, hora) => this.agregarAGoogleCalendar(yate, fecha, hora);
-
-                    // Registrar Service Worker para PWA y soporte de notificaciones push en el móvil
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.register('service-worker.js')
-                            .then(reg => console.log('Service Worker registrado con éxito:', reg))
-                            .catch(err => console.error('Error al registrar el Service Worker:', err));
-                    }
-
-                    const firebaseConfig = {
-                        apiKey: "AIzaSyCDtCAOAalVb0ReJjSaIzjEQimoQ-9_4e0",
-                        authDomain: "elite-yacht-rentals.firebaseapp.com",
-                        projectId: "elite-yacht-rentals",
-                        storageBucket: "elite-yacht-rentals.firebasestorage.app",
-                        messagingSenderId: "601846230412",
-                        appId: "1:601846230412:web:e9b96b3aedfa013617faa9"
-                    };
-                    
-                    firebase.initializeApp(firebaseConfig);
-                    const auth = firebase.auth();
-                    const db = firebase.firestore();
-
-                    auth.onAuthStateChanged(user => {
-                        if (user) {
-                            this.isLoggedIn = true;
-                            this.cargarReservasAdmin(db);
-                            this.solicitarPermisoNotificaciones();
-                        }
-                    });
-                },
-
-                classifyDevice(ua, deviceTypeFallback) {
-                    if (!ua) {
-                        if (deviceTypeFallback) {
-                            if (deviceTypeFallback === 'mobile') return 'Móvil (Genérico)';
-                            if (deviceTypeFallback === 'tablet') return 'Tablet / iPad';
-                            if (deviceTypeFallback === 'desktop') return 'PC / Laptop (Desktop)';
-                        }
-                        return 'Desconocido';
-                    }
-                    const uaLower = ua.toLowerCase();
-                    
-                    // Tablet
-                    const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk)/i.test(uaLower);
-                    if (isTablet) {
-                        if (uaLower.includes('ipad')) return 'iPad / Tablet iOS';
-                        if (uaLower.includes('android')) return 'Tablet Android';
-                        return 'Tablet / iPad';
-                    }
-                    
-                    // Mobile
-                    const isMobile = /mobi|ip(hone|od)|android|blackberry|opera mini|iemobile|webos/i.test(uaLower);
-                    if (isMobile) {
-                        if (/iphone|ipod/i.test(uaLower)) return 'Móvil iOS (iPhone)';
-                        if (/android/i.test(uaLower)) return 'Móvil Android';
-                        return 'Móvil';
-                    }
-                    
-                    // PC / Laptops
-                    if (uaLower.includes('windows')) return 'PC (Windows)';
-                    if (uaLower.includes('macintosh') || uaLower.includes('mac os x')) return 'Laptop / Mac (macOS)';
-                    if (uaLower.includes('linux')) return 'PC (Linux)';
-                    
-                    return 'PC / Laptop (Desktop)';
-                },
-
-                getRevenueByCampaign(campaignType) {
-                    const PRECIOS = { 
-                        "La Gozadera": 9000, 
-                        "La Pachanga": 10500, 
-                        "Monky": 8000, 
-                        "Percales": 15000,
-                        "Patrik": 8500
-                    };
-                    let total = 0;
-                    this.allReservas.forEach(r => {
-                        const tracking = r.tracking || (r.crm && r.crm.tracking) || {};
-                        const source = String(tracking.utm_source || '').toLowerCase();
-                        const medium = String(tracking.utm_medium || '').toLowerCase();
-                        const referrer = String(r.referrer || (r.crm && r.crm.referrer) || '').toLowerCase();
-
-                        const isGoogleAds = tracking.gclid || source.includes('google') || medium.includes('cpc');
-                        const isSocialAds = tracking.fbclid || 
-                                            source.includes('facebook') || source.includes('instagram') || source.includes('ig') ||
-                                            medium.includes('social') || medium.includes('instagram') || medium.includes('facebook') ||
-                                            referrer.includes('facebook.com') || referrer.includes('instagram.com');
-
-                        let match = false;
-                        if (campaignType === 'google' && isGoogleAds) match = true;
-                        if (campaignType === 'meta' && isSocialAds) match = true;
-                        if (campaignType === 'organic' && !isGoogleAds && !isSocialAds) match = true;
-
-                        if (match) {
-                            const baseNombre = String(r.yate || '').trim();
-                            total += PRECIOS[baseNombre] || 8500;
-                        }
-                    });
-                    return total;
-                },
-
-                getROI(campaignType) {
-                    const spend = campaignType === 'google' ? this.spendGoogle : this.spendMeta;
-                    if (!spend || spend <= 0) return 0;
-                    const revenue = this.getRevenueByCampaign(campaignType);
-                    return Math.round(((revenue - spend) / spend) * 100);
-                },
-
-                getROAS(campaignType) {
-                    const spend = campaignType === 'google' ? this.spendGoogle : this.spendMeta;
-                    if (!spend || spend <= 0) return '0.0';
-                    const revenue = this.getRevenueByCampaign(campaignType);
-                    return (revenue / spend).toFixed(1);
-                },
-
-                saveMktInputs() {
-                    localStorage.setItem('spend_google', this.spendGoogle);
-                    localStorage.setItem('clicks_google', this.clicksGoogle);
-                    localStorage.setItem('spend_meta', this.spendMeta);
-                    localStorage.setItem('clicks_meta', this.clicksMeta);
-                },
-
-                login() {
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
-                    firebase.auth().signInWithEmailAndPassword(email, password)
-                        .then(() => this.isLoggedIn = true)
-                        .catch(err => alert("Error: " + err.message));
-                },
-
-                logout() {
-                    firebase.auth().signOut().then(() => location.reload());
-                },
-
-                solicitarPermisoNotificaciones() {
-                    if ('Notification' in window) {
-                        if (Notification.permission === 'default') {
-                            Notification.requestPermission();
-                        }
-                    }
-                },
-
-                playNewBookingSound() {
-                    try {
-                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                        const now = audioCtx.currentTime;
-                        
-                        // Primer tono (campana alta corta)
-                        const osc1 = audioCtx.createOscillator();
-                        const gain1 = audioCtx.createGain();
-                        osc1.type = 'sine';
-                        osc1.frequency.setValueAtTime(587.33, now); // Re5 (D5)
-                        gain1.gain.setValueAtTime(0.25, now);
-                        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-                        osc1.connect(gain1);
-                        gain1.connect(audioCtx.destination);
-                        osc1.start(now);
-                        osc1.stop(now + 0.8);
-                        
-                        // Segundo tono armónico retrasado (sensación de campana premium)
-                        const osc2 = audioCtx.createOscillator();
-                        const gain2 = audioCtx.createGain();
-                        osc2.type = 'sine';
-                        osc2.frequency.setValueAtTime(880.00, now + 0.12); // La5 (A5)
-                        gain2.gain.setValueAtTime(0.25, now + 0.12);
-                        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.92);
-                        osc2.connect(gain2);
-                        gain2.connect(audioCtx.destination);
-                        osc2.start(now + 0.12);
-                        osc2.stop(now + 0.92);
-                    } catch (e) {
-                        console.error("No se pudo reproducir el sonido de alerta:", e);
-                    }
-                },
-
-                showLocalNotification(reserva) {
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                        const title = "⛵ ¡Nueva Reserva Recibida!";
-                        const canalText = String(reserva.channel || 'webchat').toLowerCase() === 'facebook' ? 'Mía en Facebook 🔵' : 
-                                          String(reserva.channel || 'webchat').toLowerCase() === 'instagram' ? 'Mía en Instagram 🌸' : 'Formulario Web 🌐';
-                        
-                        const options = {
-                            body: `${reserva.nombreCliente || 'Cliente'} reservó ${reserva.yate || 'embarcación'} para el ${reserva.fecha || ''} a las ${reserva.hora || ''} vía ${canalText}.`,
-                            icon: "icon-192.png",
-                            badge: "icon-192.png",
-                            vibrate: [200, 100, 200],
-                            requireInteraction: true
-                        };
-                        
-                        if ('serviceWorker' in navigator) {
-                            navigator.serviceWorker.ready.then(reg => {
-                                reg.showNotification(title, options);
-                            }).catch(err => {
-                                console.error("Error con notificación de SW, usando fallback:", err);
-                                new Notification(title, options);
-                            });
-                        } else {
-                            new Notification(title, options);
-                        }
-                    }
-                },
-
-                cargarReservasAdmin(db) {
-                    let isInitialLoad = true;
-                    db.collection("reservas").onSnapshot(snapshot => {
-                        let hasNewChanges = false;
-                        let lastDoc = null;
-                        
-                        snapshot.docChanges().forEach(change => {
-                            if (!isInitialLoad) {
-                                if (change.type === "added") {
-                                    hasNewChanges = true;
-                                    lastDoc = change.doc.data();
-                                } else if (change.type === "modified") {
-                                    const prevData = this.allReservas.find(r => r.id === change.doc.id);
-                                    const newData = change.doc.data();
-                                    // Disparar notificación si es una actualización real de datos clave de reserva
-                                    if (!prevData || prevData.status !== newData.status || prevData.fecha !== newData.fecha || prevData.yate !== newData.yate || prevData.hora !== newData.hora) {
-                                        hasNewChanges = true;
-                                        lastDoc = newData;
-                                    }
-                                }
-                            }
-                        });
-                        
-                        this.allReservas = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-                        
-                        isInitialLoad = false;
-                        this.calcularKPIs();
-                        this.renderTable();
-                        this.renderCharts();
-                         
-                        if (hasNewChanges && lastDoc) {
-                             this.playNewBookingSound();
-                             this.showLocalNotification(lastDoc);
-                        }
-                    });
-                },
-
-                calcularKPIs() {
-                    const hoy = this.todayText();
-                    const hoyData = this.allReservas.filter(r => r.fecha === hoy);
-                    this.kpiReservasHoy = hoyData.length;
-
-                    let ingresos = 0;
-                    const PRECIOS = { 
-                        "La Gozadera": 9000, 
-                        "La Pachanga": 10500, 
-                        "Monky": 8000, 
-                        "Percales": 15000,
-                        "Patrik": 8500
-                    };
-                    hoyData.forEach(r => {
-                        const baseNombre = String(r.yate || '').trim();
-                        ingresos += PRECIOS[baseNombre] || 8500;
-                    });
-                    this.kpiIngresosHoy = 'MX$' + ingresos.toLocaleString('es-MX');
-
-                    const conteo = {};
-                    this.allReservas.forEach(r => {
-                        if (r.yate) {
-                            conteo[r.yate] = (conteo[r.yate] || 0) + 1;
-                        }
-                    });
-                    
-                    let max = 0, popular = "—";
-                    Object.keys(conteo).forEach(k => { 
-                        if (conteo[k] > max) { 
-                            max = conteo[k]; 
-                            popular = k; 
-                        }
-                    });
-                    this.kpiYatePopular = popular;
-                    this.kpiOcupacion = Math.min(Math.round((this.allReservas.length / 16) * 100), 100) + '%';
-
-                    // Parse marketing channels from live database parameters
-                    let googleAdsCount = 0;
-                    let socialAdsCount = 0;
-                    let organicDirectCount = 0;
-
-                    this.allReservas.forEach(r => {
-                        const tracking = r.tracking || (r.crm && r.crm.tracking) || {};
-                        const source = String(tracking.utm_source || '').toLowerCase();
-                        const medium = String(tracking.utm_medium || '').toLowerCase();
-                        const referrer = String(r.referrer || (r.crm && r.crm.referrer) || '').toLowerCase();
-
-                        const isGoogleAds = tracking.gclid || source.includes('google') || medium.includes('cpc');
-                        const isSocialAds = tracking.fbclid || 
-                                            source.includes('facebook') || source.includes('instagram') || source.includes('ig') ||
-                                            medium.includes('social') || medium.includes('instagram') || medium.includes('facebook');
-
-                        if (isGoogleAds) {
-                            googleAdsCount++;
-                        } else if (isSocialAds) {
-                            socialAdsCount++;
-                        } else {
-                            if (referrer.includes('facebook.com') || referrer.includes('instagram.com') || referrer.includes('t.co') || referrer.includes('lnkd.in')) {
-                                socialAdsCount++;
-                            } else {
-                                organicDirectCount++;
-                            }
-                        }
-                    });
-
-                    this.mktGoogleAds = googleAdsCount;
-                    this.mktSocialAds = socialAdsCount;
-                    this.mktOrganicDirect = organicDirectCount;
-
-                    const mktTotal = googleAdsCount + socialAdsCount + organicDirectCount || 1;
-                    this.pctGoogleAds = Math.round((googleAdsCount / mktTotal) * 100) + '%';
-                    this.pctSocialAds = Math.round((socialAdsCount / mktTotal) * 100) + '%';
-                    this.pctOrganicDirect = Math.round((organicDirectCount / mktTotal) * 100) + '%';
-
-                    // Parse chatbot Mía interactions (Botpress channels: Web, FB, IG)
-                    let chatbotWebCount = 0;
-                    let chatbotFBCount = 0;
-                    let chatbotIGCount = 0;
-
-                    this.allReservas.forEach(r => {
-                        const src = String(r.source || (r.crm && r.crm.source) || '').toLowerCase();
-                        const ch = String(r.channel || (r.crm && r.crm.channel) || '').toLowerCase();
-                        
-                        const isChatbot = src.includes('botpress') || src.includes('mia') || src.includes('bot') || 
-                                          ch.includes('botpress') || ch.includes('mia') || ch.includes('chat') ||
-                                          String(r.via || '').toLowerCase().includes('bot') ||
-                                          String(r.via || '').toLowerCase().includes('mia');
-
-                        if (isChatbot) {
-                            if (ch.includes('instagram') || ch.includes('ig') || src.includes('instagram') || src.includes('ig')) {
-                                chatbotIGCount++;
-                            } else if (ch.includes('facebook') || ch.includes('fb') || ch.includes('messenger') || src.includes('facebook') || src.includes('fb') || src.includes('messenger')) {
-                                chatbotFBCount++;
-                            } else {
-                                chatbotWebCount++;
-                            }
-                        }
-                    });
-
-                    this.mktChatbotWeb = chatbotWebCount;
-                    this.mktChatbotFB = chatbotFBCount;
-                    this.mktChatbotIG = chatbotIGCount;
-
-                    const botTotal = chatbotWebCount + chatbotFBCount + chatbotIGCount || 1;
-                    this.pctChatbotWeb = Math.round((chatbotWebCount / botTotal) * 100) + '%';
-                    this.pctChatbotFB = Math.round((chatbotFBCount / botTotal) * 100) + '%';
-                    this.pctChatbotIG = Math.round((chatbotIGCount / botTotal) * 100) + '%';
-
-                    // Parse Geolocation and device classification details
-                    const geo = {};
-                    const devices = {};
-
-                    this.allReservas.forEach(r => {
-                        // 1. Geolocation
-                        const tracking = r.tracking || (r.crm && r.crm.tracking) || {};
-                        let country = r.country || tracking.country || 'México';
-                        const region = r.region || tracking.region || 'Veracruz'; // Default state
-
-                        // Normalizar el nombre del país para evitar discrepancias de acentos (p.ej. 'Mexico' vs 'México')
-                        if (country && country.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'mexico') {
-                            country = 'México';
-                        }
-
-                        if (country === 'México') {
-                            geo[region] = (geo[region] || 0) + 1;
-                        } else {
-                            geo[country] = (geo[country] || 0) + 1;
-                        }
-
-                        // 2. Devices
-                        const ua = tracking.user_agent || r.user_agent || (r.crm && r.crm.user_agent) || '';
-                        const deviceTypeFallback = r.deviceType || (r.crm && r.crm.deviceType) || '';
-                        const deviceClass = tracking.device_details || this.classifyDevice(ua, deviceTypeFallback);
-
-                        devices[deviceClass] = (devices[deviceClass] || 0) + 1;
-                    });
-
-                    this.geoStats = geo;
-                    this.deviceStats = devices;
-                    this.updateMaps();
-                },
-
-                renderTable() {
-                    const tbody = document.getElementById('reservas-table');
-                    if (!tbody) return;
-
-                    if (this.allReservas.length === 0) {
-                        tbody.innerHTML = `
-                            <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-slate-500 font-medium bg-zinc-900/10">
-                                    <div class="flex flex-col items-center justify-center gap-3">
-                                        <span class="text-3xl">⛵</span>
-                                        <p class="text-sm font-semibold text-white">Aún no hay reservas registradas</p>
-                                        <p class="text-xs text-slate-500">Las reservas creadas en el sitio aparecerán aquí de forma inmediata.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                        return;
-                    }
-
-                    tbody.innerHTML = this.allReservas.map(r => {
-                        const yate = r.yate || '-';
-                        const yateClean = yate.toLowerCase();
-                        
-                        // Style Type Badges dynamically
-                        let badgeClass = 'badge-yate';
-                        let typeIcon = '⛵';
-                        if (yateClean.includes('lancha') || yateClean.includes('gozadera') || yateClean.includes('pachanga') || yateClean.includes('monky') || yateClean.includes('patrik')) {
-                            badgeClass = 'badge-lancha';
-                            typeIcon = '🚤';
-                        }
-                        
-                        const yateBadge = yate !== '-' 
-                            ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${badgeClass}">
-                                 <span>${typeIcon}</span><span>${yate}</span>
-                               </span>`
-                            : '-';
-
-                        const crmPhone = r.telefono 
-                            ? `<span class="text-xs text-slate-400 block mt-1 font-mono">${r.telefono}</span>` 
-                            : '';
-
-                        const crmEmail = r.correo 
-                            ? `<span class="text-xs text-amber-400/80 block mt-0.5 font-mono">${r.correo}</span>` 
-                            : '';
-
-                        const esModificacion = r.status === 'modified' || r.crmStage === 'reservation_modified' || r.via === 'chatbot_mia_update';
-                        const modBadge = esModificacion 
-                            ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 ml-2 uppercase tracking-wide">Act.</span>` 
-                            : '';
-
-                        return `
-                            <tr class="hover:bg-white/[0.02] transition-colors">
-                                <td class="px-6 py-4.5 font-semibold text-white">${yateBadge}</td>
-                                <td class="px-6 py-4.5 text-slate-300 font-medium">${r.fecha || '-'}</td>
-                                <td class="px-6 py-4.5 text-slate-300 font-medium">${r.hora || '-'}</td>
-                                <td class="px-6 py-4.5">
-                                    <div class="text-slate-100 font-semibold flex items-center">${r.nombreCliente || r.nombre || '-'}${modBadge}</div>
-                                    ${crmPhone}
-                                    ${crmEmail}
-                                </td>
-                                <td class="px-6 py-4.5 text-slate-400 font-mono text-xs">${r.fechaCumpleanos || '-'}</td>
-                                <td class="px-6 py-4.5 text-center">
-                                    <div class="inline-flex items-center gap-2">
-                                        <button onclick="window.agregarAGoogleCalendar('${yate}','${r.fecha||''}','${r.hora||''}')" class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 hover:bg-emerald-500/20 hover:scale-[1.03] transition-all shadow-sm" title="Agregar a Google Calendar">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                                            </svg>
-                                        </button>
-                                        <button onclick="window.borrarReserva('${r.id}')" class="p-2.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/15 hover:bg-red-500/20 hover:scale-[1.03] transition-all shadow-sm" title="Eliminar Reserva">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                    }).join('');
-                },
-
-                updateMaps() {
-                    if (typeof google === 'undefined' || !google.charts || !google.charts.safeLoad) {
-                        setTimeout(() => this.updateMaps(), 1000);
-                        return;
-                    }
-
-                    const mexicoData = [
-                        ['Estado', 'Leads']
-                    ];
-                    
-                    const worldData = [
-                        ['País', 'Leads']
-                    ];
-
-                    const mexicoStatesCounts = {};
-                    const countriesCounts = {};
-
-                    // Mapeo de estados de México a códigos ISO-3166-2 reconocidos por Google Charts
-                    const MX_STATE_ISO = {
-                        'aguascalientes': 'MX-AGU', 'baja california': 'MX-BCN', 'baja california sur': 'MX-BCS',
-                        'campeche': 'MX-CAM', 'coahuila': 'MX-COA', 'colima': 'MX-COL', 'chiapas': 'MX-CHP',
-                        'chihuahua': 'MX-CHH', 'ciudad de mexico': 'MX-DIF', 'distrito federal': 'MX-DIF', 'cdmx': 'MX-DIF',
-                        'durango': 'MX-DUR', 'guanajuato': 'MX-GUA', 'guerrero': 'MX-GRO', 'hidalgo': 'MX-HID',
-                        'jalisco': 'MX-JAL', 'mexico': 'MX-MEX', 'estado de mexico': 'MX-MEX', 'michoacan': 'MX-MIC',
-                        'morelos': 'MX-MOR', 'nayarit': 'MX-NAY', 'nuevo leon': 'MX-NLE', 'oaxaca': 'MX-OAX',
-                        'puebla': 'MX-PUE', 'queretaro': 'MX-QUE', 'quintana roo': 'MX-ROO', 'san luis potosi': 'MX-SLP',
-                        'sinaloa': 'MX-SIN', 'sonora': 'MX-SON', 'tabasco': 'MX-TAB', 'tamaulipas': 'MX-TAM',
-                        'tlaxcala': 'MX-TLA', 'veracruz': 'MX-VER', 'yucatan': 'MX-YUC', 'zacatecas': 'MX-ZAC'
-                    };
-
-                    this.allReservas.forEach(r => {
-                        const tracking = r.tracking || (r.crm && r.crm.tracking) || {};
-                        let country = r.country || tracking.country || 'México';
-                        let region = r.region || tracking.region || 'Veracruz';
-                        let countryCode = r.country_code || tracking.country_code || 'MX';
-
-                        if (country && country.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") === 'mexico') {
-                            country = 'México';
-                        }
-
-                        if (country === 'México') {
-                            const cleanRegion = region.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                            const stateCode = MX_STATE_ISO[cleanRegion] || ('MX-' + region.substring(0, 3).toUpperCase());
-                            mexicoStatesCounts[stateCode] = (mexicoStatesCounts[stateCode] || 0) + 1;
-                            countriesCounts['MX'] = (countriesCounts['MX'] || 0) + 1;
-                        } else {
-                            if (countryCode && countryCode.length === 2) {
-                                countriesCounts[countryCode.toUpperCase()] = (countriesCounts[countryCode.toUpperCase()] || 0) + 1;
-                            }
-                        }
-                    });
-
-                    for (const [state, count] of Object.entries(mexicoStatesCounts)) {
-                        mexicoData.push([state, count]);
-                    }
-
-                    for (const [country, count] of Object.entries(countriesCounts)) {
-                        worldData.push([country, count]);
-                    }
-
-                    // Dibujar mapa de México
-                    try {
-                        const containerMexico = document.getElementById('map-mexico');
-                        if (containerMexico) {
-                            if (mexicoData.length > 1) {
-                                const dataTable = google.visualization.arrayToDataTable(mexicoData);
-                                const chart = new google.visualization.GeoChart(containerMexico);
-                                chart.draw(dataTable, {
-                                    region: 'MX',
-                                    resolution: 'provinces',
-                                    colorAxis: {colors: ['#38bdf8', '#fbbf24']}, // De azul cielo a dorado de lujo
-                                    backgroundColor: 'transparent',
-                                    datalessRegionColor: 'rgba(255, 255, 255, 0.04)',
-                                    defaultColor: 'rgba(255, 255, 255, 0.02)',
-                                    legend: 'none',
-                                    keepAspectRatio: true
-                                });
-                            } else {
-                                containerMexico.innerHTML = '<div class="text-xs text-slate-500 text-center py-12">No hay leads de México registrados aún.</div>';
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error drawing Mexico map:', e);
-                    }
-
-                    // Dibujar mapa mundial
-                    try {
-                        const containerWorld = document.getElementById('map-world');
-                        if (containerWorld) {
-                            if (worldData.length > 1) {
-                                const dataTable = google.visualization.arrayToDataTable(worldData);
-                                const chart = new google.visualization.GeoChart(containerWorld);
-                                chart.draw(dataTable, {
-                                    colorAxis: {colors: ['#38bdf8', '#fbbf24']}, // De azul cielo a dorado de lujo
-                                    backgroundColor: 'transparent',
-                                    datalessRegionColor: 'rgba(255, 255, 255, 0.04)',
-                                    defaultColor: 'rgba(255, 255, 255, 0.02)',
-                                    legend: 'none',
-                                    keepAspectRatio: true
-                                });
-                            } else {
-                                containerWorld.innerHTML = '<div class="text-xs text-slate-500 text-center py-12">No hay leads internacionales registrados aún.</div>';
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Error drawing World map:', e);
-                    }
-                },
-
-                createSparkline(canvasId, data, color) {
-                    const canvas = document.getElementById(canvasId);
-                    if (!canvas) return;
-
-                    const ctx = canvas.getContext('2d');
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 40);
-                    gradient.addColorStop(0, color + '2b'); // Subtle area opacity
-                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-                    if (window[canvasId + 'Instance']) {
-                        window[canvasId + 'Instance'].destroy();
-                    }
-
-                    window[canvasId + 'Instance'] = new Chart(canvas, {
-                        type: 'line',
-                        data: {
-                            labels: data.map((_, i) => i),
-                            datasets: [{
-                                data: data,
-                                borderColor: color,
-                                borderWidth: 2.2,
-                                fill: true,
-                                backgroundColor: gradient,
-                                tension: 0.44,
-                                pointRadius: 0,
-                                pointHoverRadius: 0
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { 
-                                legend: { display: false },
-                                tooltip: { enabled: false }
-                            },
-                            scales: {
-                                x: { display: false },
-                                y: { display: false, min: Math.min(...data) * 0.9 }
-                            }
-                        }
-                    });
-                },
-
-                renderCharts() {
-                    const barCanvas = document.getElementById('barChart');
-                    const pieCanvas = document.getElementById('pieChart');
-                    const horasCanvas = document.getElementById('horasChart');
-
-                    if (!barCanvas || !pieCanvas || !horasCanvas) return;
-
-                    if (this.barChartInstance) this.barChartInstance.destroy();
-                    if (this.pieChartInstance) this.pieChartInstance.destroy();
-                    if (this.horasChartInstance) this.horasChartInstance.destroy();
-
-                    // 1. Process Sparklines (dynamic values tied to actual Firestore count)
-                    const totalReservasCount = this.allReservas.length;
-                    const hoy = this.todayText();
-                    const reservasHoyCount = this.allReservas.filter(r => r.fecha === hoy).length;
-                    const popularYateCount = this.allReservas.filter(r => r.yate === this.kpiYatePopular).length;
-                    const occupancyPercentage = parseInt(this.kpiOcupacion) || 0;
-
-                    this.createSparkline('sparklineReservas', [2, 5, 4, 7, totalReservasCount], '#38bdf8');
-                    this.createSparkline('sparklineIngresos', [8000, 16500, 12000, 24000, reservasHoyCount * 8500], '#fbbf24');
-                    this.createSparkline('sparklinePopular', [1, 2, 1, 3, popularYateCount], '#34d399');
-                    this.createSparkline('sparklineOcupacion', [30, 50, 42, 60, occupancyPercentage], '#c084fc');
-
-                    // 2. Process Line Area Trend Chart
-                    const grouped = {};
-                    this.allReservas.forEach(r => grouped[r.fecha] = (grouped[r.fecha] || 0) + 1);
-                    const labels = Object.keys(grouped).sort();
-                    const values = labels.map(d => grouped[d]);
-
-                    const ctxBar = barCanvas.getContext('2d');
-                    const barGradient = ctxBar.createLinearGradient(0, 0, 0, 250);
-                    barGradient.addColorStop(0, 'rgba(251, 191, 36, 0.18)');
-                    barGradient.addColorStop(1, 'rgba(251, 191, 36, 0.00)');
-
-                    this.barChartInstance = new Chart(barCanvas, {
-                        type: 'line',
-                        data: { 
-                            labels, 
-                            datasets: [{ 
-                                label: 'Reservas', 
-                                data: values, 
-                                backgroundColor: barGradient, 
-                                borderColor: '#fbbf24', 
-                                borderWidth: 3, 
-                                fill: true,
-                                tension: 0.38,
-                                pointRadius: 4.5,
-                                pointBackgroundColor: '#fbbf24',
-                                pointBorderColor: '#09090b',
-                                pointBorderWidth: 2,
-                                pointHoverRadius: 9,
-                                pointHoverBackgroundColor: '#fbbf24',
-                                pointHoverBorderColor: '#ffffff',
-                                pointHoverBorderWidth: 3
-                            }] 
-                        },
-                        options: { 
-                            responsive: true, 
-                            maintainAspectRatio: false,
-                            interaction: {
-                                mode: 'index',
-                                intersect: false,
-                            },
-                            plugins: { 
-                                legend: { display: false },
-                                tooltip: {
-                                    backgroundColor: 'rgba(9, 9, 11, 0.95)',
-                                    borderColor: 'rgba(255,255,255,0.08)',
-                                    borderWidth: 1,
-                                    titleFont: { family: 'Inter', weight: 'bold' },
-                                    bodyFont: { family: 'Inter' }
-                                }
-                            }, 
-                            scales: { 
-                                y: { 
-                                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false }, 
-                                    ticks: { color: '#a1a1aa', font: { family: 'Inter', size: 10 } } 
-                                }, 
-                                x: { 
-                                    grid: { display: false }, 
-                                    ticks: { color: '#a1a1aa', font: { family: 'Inter', size: 10 } } 
-                                } 
-                            } 
-                        }
-                    });
-
-                    // 3. Process Doughnut Chart data
-                    const conteoYates = {};
-                    this.allReservas.forEach(r => {
-                        if (r.yate) {
-                            conteoYates[r.yate] = (conteoYates[r.yate] || 0) + 1;
-                        }
-                    });
-
-                    const doughnutLabels = Object.keys(conteoYates);
-                    const doughnutValues = Object.values(conteoYates);
-
-                    this.pieChartInstance = new Chart(pieCanvas, {
-                        type: 'doughnut',
-                        data: { 
-                            labels: doughnutLabels, 
-                            datasets: [{ 
-                                data: doughnutValues, 
-                                backgroundColor: [
-                                    '#fbbf24', // Amber 400
-                                    '#38bdf8', // Sky 400
-                                    '#34d399', // Emerald 400
-                                    '#f87171', // Red 400
-                                    '#a78bfa'  // Purple 400
-                                ], 
-                                borderColor: '#09090b', 
-                                borderWidth: 3,
-                                hoverOffset: 12
-                            }] 
-                        },
-                        options: { 
-                            responsive: true, 
-                            maintainAspectRatio: false,
-                            cutout: '78%',
-                            animation: {
-                                animateRotate: true,
-                                animateScale: true,
-                                duration: 1200,
-                                easing: 'easeOutQuart'
-                            },
-                            plugins: { 
-                                legend: { 
-                                    position: 'bottom', 
-                                    labels: { 
-                                        color: '#d4d4d8', 
-                                        boxWidth: 10, 
-                                        padding: 16,
-                                        font: { family: 'Inter', size: 11 }
-                                    }
-                                },
-                                tooltip: {
-                                    backgroundColor: 'rgba(9, 9, 11, 0.95)',
-                                    borderColor: 'rgba(255,255,255,0.08)',
-                                    borderWidth: 1,
-                                    bodyFont: { family: 'Inter' }
-                                }
-                            }
-                        }
-                    });
-
-                    // 4. Process Horizontal Hour Slot Demand Chart (Innovative third metric)
-                    const conteoHoras = { '10:00': 0, '11:00': 0, '12:00': 0, '13:00': 0 };
-                    this.allReservas.forEach(r => {
-                        if (r.hora) {
-                            const cleanHora = String(r.hora).trim();
-                            if (conteoHoras[cleanHora] !== undefined) {
-                                conteoHoras[cleanHora]++;
-                            }
-                        }
-                    });
-
-                    const horasLabels = ['10 am', '11 am', '12 pm', '1 pm'];
-                    const horasValues = ['10:00', '11:00', '12:00', '13:00'].map(h => conteoHoras[h]);
-                    console.log('DEBUG HORAS - Valores del gráfico:', horasValues);
-
-                    const ctxHoras = horasCanvas.getContext('2d');
-                    const hoursGradient = ctxHoras.createLinearGradient(0, 0, 250, 0);
-                    hoursGradient.addColorStop(0, '#38bdf8'); // Sky 400
-                    hoursGradient.addColorStop(1, 'rgba(56, 189, 248, 0.05)');
-
-                    this.horasChartInstance = new Chart(horasCanvas, {
-                        type: 'bar',
-                        data: {
-                            labels: horasLabels,
-                            datasets: [{
-                                label: 'Reservas',
-                                data: horasValues,
-                                backgroundColor: hoursGradient,
-                                borderColor: '#38bdf8',
-                                borderWidth: 1.5,
-                                borderRadius: 6,
-                                hoverBackgroundColor: '#0284c7'
-                            }]
-                        },
-                        options: {
-                            indexAxis: 'y', // Horizontal bar chart en Chart.js v4! (Debe ir en options, no en datasets)
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    backgroundColor: 'rgba(9, 9, 11, 0.95)',
-                                    borderColor: 'rgba(255,255,255,0.08)',
-                                    borderWidth: 1,
-                                    bodyFont: { family: 'Inter' }
-                                }
-                            },
-                            scales: {
-                                x: { 
-                                    grid: { color: 'rgba(255,255,255,0.04)', drawBorder: false }, 
-                                    ticks: { color: '#a1a1aa', font: { family: 'Inter', size: 10 } } 
-                                },
-                                y: { 
-                                    grid: { display: false }, 
-                                    ticks: { color: '#a1a1aa', font: { family: 'Inter', size: 10 } } 
-                                }
-                            }
-                        }
-                    });
-                },
-
-                borrarReserva(id) {
-                    if (confirm("¿Estás seguro de que deseas eliminar permanentemente esta reserva en Firestore? Esta acción no se puede deshacer.")) {
-                        firebase.firestore().collection('reservas').doc(id).delete()
-                            .then(() => alert("Reserva eliminada con éxito."))
-                            .catch(err => alert("Error al eliminar reserva: " + err.message));
-                    }
-                },
-
-                borrarTodasLasReservas() {
-                    if (confirm("🚨 ADVERTENCIA: ¿Estás seguro de que deseas eliminar TODAS las reservas activas en Firestore?") && confirm("Esta acción borrará toda la colección. ¿Confirmas de forma irreversible?")) {
-                        const batch = firebase.firestore().batch();
-                        firebase.firestore().collection("reservas").get().then(snapshot => {
-                            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-                            batch.commit().then(() => alert("Se han eliminado todas las reservas exitosamente."));
-                        });
-                    }
-                },
-
-                todayText() {
-                    const d = new Date();
-                    const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-                    return `${String(d.getDate()).padStart(2,'0')} ${meses[d.getMonth()]} ${d.getFullYear()}`;
-                },
-
-                agregarAGoogleCalendar(yate, fecha, hora) {
-                    if (!fecha || !hora) return;
-                    
-                    const parts = fecha.split(' ');
-                    if (parts.length < 3) return;
-
-                    const dia = parts[0];
-                    const mesPalabra = parts[1].toLowerCase();
-                    const anio = parts[2];
-
-                    const meses = {
-                        "enero": "01", "febrero": "02", "marzo": "03", "abril": "04", 
-                        "mayo": "05", "junio": "06", "julio": "07", "agosto": "08", 
-                        "septiembre": "09", "octubre": "10", "noviembre": "11", "diciembre": "12"
-                    };
-                    const mes = meses[mesPalabra] || "01";
-                    
-                    const fechaISO = `${anio}-${mes}-${dia.padStart(2, '0')}`;
-                    const start = `${fechaISO}T${hora}:00`.replace(/[:-]/g,'');
-                    
-                    const horaParts = hora.split(':');
-                    const endHour = String(parseInt(horaParts[0]) + 2).padStart(2, '0');
-                    const end = `${fechaISO}T${endHour}:${horaParts[1]}:00`.replace(/[:-]/g,'');
-
-                    const link = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Reserva Elite - ' + yate)}&dates=${start}/${end}`;
-                    window.open(link, '_blank');
-                },
-
-                exportarCSV() {
-                    let csv = "\uFEFF"; // UTF-8 BOM
-                    csv += "Yate/Lancha,Fecha,Hora,Cliente,Email,Cumpleaños,Teléfono\n";
-                    this.allReservas.forEach(r => {
-                        const esModificacion = r.status === 'modified' || r.crmStage === 'reservation_modified' || r.via === 'chatbot_mia_update';
-                        const nombreLimpio = r.nombreCliente || r.nombre || '';
-                        const nombreDisplay = esModificacion ? `${nombreLimpio} (Actualización)` : nombreLimpio;
-                        csv += `"${r.yate||''}","${r.fecha||''}","${r.hora||''}","${nombreDisplay}","${r.correo||''}","${r.fechaCumpleanos||''}","${r.telefono||''}"\n`;
-                    });
-                    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
-                    const link = document.createElement("a");
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `reservas_elite_${new Date().toISOString().slice(0,10)}.csv`;
-                    link.click();
+                                
+                                <!-- Hero Image Block -->
+                                <tr>
+                                    <td style="padding: 0;">
+                                        <img src="${yate.img}" alt="${embarcacionReservada}" width="100%" style="display: block; width: 100%; max-height: 280px; object-fit: cover; border-bottom: 1px solid #27272a;">
+                                    </td>
+                                </tr>
+
+                                <!-- Welcome Text -->
+                                <tr>
+                                    <td style="padding: 30px 24px 20px 24px;">
+                                        <h1 style="margin: 0; font-size: 22px; font-weight: bold; color: #ffffff; text-align: center;">
+                                            ¡Tu Aventura en el Mar te Espera!
+                                        </h1>
+                                        <p style="margin-top: 12px; margin-bottom: 0; font-size: 15px; color: #a1a1aa; line-height: 1.6; text-align: center;">
+                                            Hola <strong>${nombreCliente}</strong>, nos complace confirmar tu reserva premium. A continuación, encontrarás todos los detalles y las instrucciones exactas de tu embarque.
+                                        </p>
+                                    </td>
+                                </tr>
+
+                                <!-- Details Table Card -->
+                                <tr>
+                                    <td style="padding: 0 24px 20px 24px;">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="12" style="background-color: #18181b; border: 1px solid #27272a; border-radius: 16px;">
+                                            <tr>
+                                                <td width="35%" style="color: #a1a1aa; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Embarcación</td>
+                                                <td style="color: #ffffff; font-size: 15px; font-weight: bold;">${embarcacionReservada} (${yate.tipo})</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #a1a1aa; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Fecha Paseo</td>
+                                                <td style="color: #ffffff; font-size: 15px; font-weight: bold;">${fecha}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #a1a1aa; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Hora Salida</td>
+                                                <td style="color: #fbbf24; font-size: 15px; font-weight: bold;">${formatHourLabel(hora)} (Favor de llegar 15 min antes)</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                                <!-- Departure Marina (Google Maps Pin integration) -->
+                                <tr>
+                                    <td style="padding: 0 24px 25px 24px;">
+                                        <table width="100%" border="0" cellspacing="0" cellpadding="16" style="background-color: #1e1b4b; border: 1px solid #312e81; border-radius: 16px;">
+                                            <tr>
+                                                <td>
+                                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                        <tr>
+                                                            <td width="32" valign="top">
+                                                                <img src="${siteUrl}/pin-mapa.png" alt="Ubicación" width="24" height="24" style="display: block;">
+                                                            </td>
+                                                            <td style="padding-left: 10px;">
+                                                                <h3 style="margin: 0; font-size: 16px; color: #ffffff; font-weight: bold;">
+                                                                    Punto de Salida: ${marina.nombre}
+                                                                </h3>
+                                                                <p style="margin-top: 6px; margin-bottom: 12px; font-size: 13px; color: #c084fc; line-height: 1.5;">
+                                                                    ${marina.ubicacion}
+                                                                </p>
+                                                                <table border="0" cellspacing="0" cellpadding="0">
+                                                                    <tr>
+                                                                        <td style="background-color: #fbbf24; border-radius: 8px;">
+                                                                            <a href="${marina.mapLink}" target="_blank" style="padding: 10px 16px; font-size: 13px; font-weight: bold; color: #09090b; text-decoration: none; display: inline-block;">
+                                                                                📍 Abrir en Google Maps
+                                                                            </a>
+                                                                        </td>
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+
+                                <!-- Inclusions List -->
+                                ${includesHtml ? `
+                                <tr>
+                                    <td style="padding: 0 24px 25px 24px;">
+                                        <h3 style="margin: 0 0 12px 0; font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: #ffffff;">¿Qué incluye tu servicio?</h3>
+                                        <ul style="margin: 0; padding-left: 0; list-style-type: none;">
+                                            ${includesHtml}
+                                        </ul>
+                                    </td>
+                                </tr>
+                                ` : ''}
+
+                                <!-- Assistence / Human Contact Details -->
+                                <tr>
+                                    <td style="padding: 25px 24px; background-color: #18181b; border-top: 1px solid #27272a; text-align: center;">
+                                        <p style="margin: 0; font-size: 14px; color: #a1a1aa; line-height: 1.6;">
+                                            ¿Necesitas ayuda o hablar con un asesor humano? 👨‍✈️
+                                        </p>
+                                        <p style="margin-top: 8px; margin-bottom: 0; font-size: 15px; font-weight: bold;">
+                                            Contacto Directo: 
+                                            <a href="tel:+522295202785" style="color: #fbbf24; text-decoration: none; margin-left: 5px;">+52 229 520 2785</a>
+                                        </p>
+                                    </td>
+                                </tr>
+
+                                <!-- Footer Copyright -->
+                                <tr>
+                                    <td align="center" style="padding: 20px 24px; background-color: #09090b; font-size: 11px; color: #52525b; border-top: 1px solid #18181b;">
+                                        © 2026 Elite Yacht Rentals • Veracruz, México • Paseos de Lujo Privados
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+        `;
+
+        await db.collection('mail').add({
+            to: correo,
+            message: {
+                subject: `Confirmación de tu Reserva: ${embarcacionReservada} ⛵`,
+                html: emailHtml
+            }
+        });
+
+        trackLeadEvent({
+            value: 1,
+            currency: 'MXN',
+            item_name: embarcacionReservada
+        });
+
+        hydrateWhatsAppLinks();
+        document.getElementById('modal-whatsapp-link')?.setAttribute('href', payload.whatsappLink);
+
+        showToast(`Reserva confirmada para ${embarcacionReservada} a las ${formatHourLabel(hora)}. Se envió la confirmación a tu correo.`, 'success');
+        limpiarFormularioReserva();
+        cerrarModal();
+    } catch (error) {
+        console.error('Error al guardar la reserva:', error);
+        showToast('Ocurrió un error al guardar la reserva.', 'error');
+    } finally {
+        setLoadingState(false);
+    }
+}
+
+async function cancelarReserva(docId) {
+    if (confirm('¿Cancelar esta reserva?')) {
+        try {
+            await db.collection('reservas').doc(docId).delete();
+            showToast('Reserva cancelada correctamente.', 'success');
+        } catch (error) {
+            console.error('Error al cancelar la reserva:', error);
+            showToast('No se pudo cancelar la reserva.', 'error');
+        }
+    }
+}
+
+function syncReservaTextboxFromSelect() {
+    const input = document.getElementById('reserva-textbox');
+    const select = document.getElementById('select-yate');
+    if (!input || !select) return;
+
+    const yate = yates.find(y => Number(y.id) === Number(select.value));
+    input.value = yate ? yate.nombre : '';
+}
+
+function seleccionarYate(id) {
+    yateSeleccionado = id;
+    const select = document.getElementById('select-yate');
+    if (select) {
+        select.value = String(id);
+        syncReservaTextboxFromSelect();
+        actualizarDisponibilidad();
+    }
+}
+
+function llenarSelectorYates() {
+    const select = document.getElementById('select-yate');
+    if (!select) return;
+
+    const valorActual = select.value;
+    select.innerHTML = '<option value="">Elige un yate o lancha...</option>';
+
+    yates.forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y.id;
+        opt.textContent = `${y.nombre} - ${y.tipo} - ${y.precio}`;
+        select.appendChild(opt);
+    });
+
+    if (yateSeleccionado) {
+        select.value = String(yateSeleccionado);
+    } else if (valorActual) {
+        select.value = valorActual;
+    }
+
+    syncReservaTextboxFromSelect();
+}
+
+function initFlatpickr() {
+    if (fechaPicker) fechaPicker.destroy();
+    if (cumpleanosPicker) cumpleanosPicker.destroy();
+
+    fechaPicker = flatpickr('#inline-calendar', {
+        inline: true,
+        locale: 'es',
+        minDate: 'today',
+        dateFormat: 'd F Y',
+        onChange: (selectedDates, dateStr) => {
+            const fechaInput = document.getElementById('fecha');
+            if (fechaInput) {
+                fechaInput.value = dateStr;
+            }
+            actualizarFleetPanel(dateStr);
+            actualizarDisponibilidad();
+        },
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            const dateStr = fp.formatDate(dayElem.dateObj, 'd F Y');
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const checkDate = new Date(dayElem.dateObj);
+            checkDate.setHours(0,0,0,0);
+
+            if (checkDate < today) return;
+
+            // Obtener disponibilidad de la flota para esta fecha
+            const reservedYatesIds = new Set();
+            reservas.forEach(r => {
+                if (r.fecha === dateStr && r.yateId) {
+                    reservedYatesIds.add(Number(r.yateId));
+                }
+            });
+
+            // Crear y agregar el contenedor de 5 puntos
+            const dotsContainer = document.createElement('div');
+            dotsContainer.className = 'day-dots-container';
+
+            // Tenemos 5 lanchas con IDs de 1 a 5
+            for (let i = 1; i <= 5; i++) {
+                const dot = document.createElement('span');
+                const isReserved = reservedYatesIds.has(i);
+                dot.className = `day-dot ${isReserved ? 'dot-booked' : 'dot-free'}`;
+                dotsContainer.appendChild(dot);
+            }
+
+            dayElem.appendChild(dotsContainer);
+
+            const disponiblesHoyCount = yates.filter(y => !reservedYatesIds.has(Number(y.id))).length;
+
+            if (disponiblesHoyCount === 0) {
+                dayElem.classList.add('date-occupied');
+                dayElem.classList.remove('date-available');
+                dayElem.setAttribute('title', 'Todas las lanchas reservadas (5/5)');
+            } else {
+                dayElem.classList.add('date-available');
+                dayElem.classList.remove('date-occupied');
+                if (disponiblesHoyCount === 1) {
+                    const lastYachtName = yates.filter(y => !reservedYatesIds.has(Number(y.id)))[0]?.nombre || '';
+                    dayElem.setAttribute('title', `Solo queda 1 lancha disponible: ${lastYachtName}`);
+                } else {
+                    const freeNames = yates.filter(y => !reservedYatesIds.has(Number(y.id))).map(y => y.nombre).join(', ');
+                    dayElem.setAttribute('title', `${disponiblesHoyCount} lanchas disponibles: ${freeNames}`);
                 }
             }
         }
-    </script>
-</body>
-</html>
+    });
+
+    cumpleanosPicker = flatpickr('#fecha-cumpleanos', {
+        locale: 'es',
+        maxDate: 'today',
+        dateFormat: 'Y-m-d',
+        altInput: true,
+        altFormat: 'd F Y',
+        disableMobile: true
+    });
+}
+
+function abrirModal() {
+    const modal = document.getElementById('modal');
+    if (!modal) return;
+
+    llenarSelectorYates();
+    syncReservaTextboxFromSelect();
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.classList.add('modal-open');
+    actualizarDisponibilidad();
+    trackReserveIntent();
+}
+
+function limpiarFormularioReserva() {
+    const nombre = document.getElementById('nombre-cliente');
+    const telefono = document.getElementById('telefono-cliente');
+    const correo = document.getElementById('correo-cliente');
+    const cumple = document.getElementById('fecha-cumpleanos');
+    const select = document.getElementById('select-yate');
+    const fecha = document.getElementById('fecha');
+    const hora = document.getElementById('hora');
+
+    if (nombre) nombre.value = '';
+    if (telefono) telefono.value = '';
+    if (correo) correo.value = '';
+    if (cumple) cumple.value = '';
+    if (select) select.value = yateSeleccionado ? String(yateSeleccionado) : '';
+    if (fecha) fecha.value = '';
+    if (hora) hora.value = '';
+    if (cumpleanosPicker) cumpleanosPicker.clear();
+    if (fechaPicker) fechaPicker.clear();
+}
+
+function cerrarModal() {
+    const modal = document.getElementById('modal');
+    if (!modal) return;
+
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    
+    // Only remove modal-open if calendar modal is also closed
+    const calendarModal = document.getElementById('calendar-popup-modal');
+    if (!calendarModal || calendarModal.classList.contains('hidden')) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
+/* ==================== PREMIUM CALENDAR POP-UP HELPER FUNCTIONS ==================== */
+
+function abrirCalendarModal() {
+    const calendarModal = document.getElementById('calendar-popup-modal');
+    if (!calendarModal) return;
+
+    calendarModal.classList.remove('hidden');
+    calendarModal.classList.add('flex');
+    document.body.classList.add('modal-open');
+
+    // If there is already a date selected, highlight it and update panel
+    const fechaVal = document.getElementById('fecha')?.value || '';
+    if (fechaVal && fechaPicker) {
+        fechaPicker.setDate(fechaVal, false);
+        actualizarFleetPanel(fechaVal);
+    } else {
+        // Clear panel message
+        const panel = document.getElementById('fleet-availability-panel');
+        if (panel) {
+            panel.innerHTML = `
+                <div class="text-center py-10 text-slate-400">
+                    <span class="text-4xl block mb-3">📅</span>
+                    Elige una fecha del calendario para ver las lanchas y yates disponibles en tiempo real.
+                </div>
+            `;
+        }
+        const display = document.getElementById('selected-date-display');
+        if (display) display.textContent = 'Selecciona un día';
+    }
+    
+    if (fechaPicker) {
+        fechaPicker.redraw();
+    }
+}
+
+function cerrarCalendarModal() {
+    const calendarModal = document.getElementById('calendar-popup-modal');
+    if (!calendarModal) return;
+
+    calendarModal.classList.add('hidden');
+    calendarModal.classList.remove('flex');
+    
+    // Only remove modal-open from body if the main reservation modal is also closed
+    const mainModal = document.getElementById('modal');
+    if (!mainModal || mainModal.classList.contains('hidden')) {
+        document.body.classList.remove('modal-open');
+    }
+}
+
+function abrirFlujoCalendario() {
+    abrirModal();
+    abrirCalendarModal();
+}
+
+function actualizarFleetPanel(dateStr) {
+    const display = document.getElementById('selected-date-display');
+    if (display) display.textContent = dateStr;
+
+    const panel = document.getElementById('fleet-availability-panel');
+    if (!panel) return;
+
+    // 1. Obtener disponibilidad de la flota para esta fecha
+    const reservedYachtIds = new Set();
+    reservas.forEach(r => {
+        if (r.fecha === dateStr && r.yateId) {
+            reservedYachtIds.add(Number(r.yateId));
+        }
+    });
+
+    const disponiblesHoyYates = yates.filter(y => !reservedYachtIds.has(Number(y.id)));
+    const totalDisponibles = disponiblesHoyYates.length;
+
+    // 2. Renderizar tarjetas de la flota
+    panel.innerHTML = yates.map(y => {
+        const isReserved = reservedYachtIds.has(Number(y.id));
+        
+        let badgeClass = 'badge-disponible';
+        let badgeText = 'Disponible';
+        let cardClass = '';
+        let buttonText = 'Seleccionar';
+        let buttonDisabled = '';
+        let subText = '¡Lista para zarpar! Incluye capitán, refrescos, cervezas y combustible.';
+
+        if (isReserved) {
+            badgeClass = 'badge-reservada';
+            badgeText = 'Reservada';
+            cardClass = 'status-booked';
+            buttonText = 'Ocupada';
+            buttonDisabled = 'disabled';
+            subText = 'Esta embarcación ya tiene reserva asignada para este día.';
+        } else if (totalDisponibles === 1) {
+            badgeClass = 'badge-urgencia';
+            badgeText = 'Última Disponible';
+            cardClass = 'status-urgencia';
+            subText = '🔥 ¡Alta demanda! Es el único yate que queda libre hoy.';
+        }
+
+        const includesList = Array.isArray(y.incluye) ? y.incluye : (y.incluye || '').split(',').map(s => s.trim());
+        const includesHTML = includesList.slice(0, 3).map(inc => `<span class="include-chip text-[10px] py-0.5 px-2 bg-white/5 border border-white/5 rounded-full">${escapeHtml(inc)}</span>`).join('');
+
+        return `
+            <div class="yacht-status-card ${cardClass}">
+                <div class="yacht-status-card-img-wrap">
+                    <img src="${escapeHtml(y.img)}" alt="${escapeHtml(y.nombre)}" class="yacht-status-card-img" loading="lazy">
+                </div>
+                <div class="yacht-status-card-info">
+                    <div class="flex items-center justify-between gap-2">
+                        <h5 class="yacht-status-card-name">${escapeHtml(y.nombre)}</h5>
+                        <span class="text-xs font-bold text-amber-300">${escapeHtml(y.precio.split('/')[0] || y.precio)}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-0.5">${escapeHtml(y.tipo)} • ${escapeHtml(y.capacidad)}</p>
+                    <span class="yacht-status-card-badge ${badgeClass}">${badgeText}</span>
+                    <p class="text-[10px] text-slate-300 mt-2 leading-relaxed">${subText}</p>
+                    <div class="flex flex-wrap gap-1 mt-2">
+                        ${includesHTML}
+                    </div>
+                </div>
+                <div class="yacht-status-card-action">
+                    <button type="button" class="premium-button text-xs py-2 px-3 min-h-0" ${buttonDisabled} onclick="seleccionarYateYFecha(${Number(y.id)}, '${escapeHtml(dateStr)}')">
+                        ${buttonText}
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function seleccionarYateYFecha(yateId, dateStr) {
+    const yate = yates.find(y => Number(y.id) === Number(yateId));
+    if (!yate) return;
+
+    // Set values in the main modal form
+    const selectYate = document.getElementById('select-yate');
+    if (selectYate) {
+        selectYate.value = String(yateId);
+    }
+    const textBox = document.getElementById('reserva-textbox');
+    if (textBox) {
+        textBox.value = yate.nombre;
+    }
+    const fechaInput = document.getElementById('fecha');
+    if (fechaInput) {
+        fechaInput.value = dateStr;
+    }
+
+    // Trigger updates
+    actualizarDisponibilidad();
+    
+    // Close the calendar modal
+    cerrarCalendarModal();
+
+    // Show visual feedback
+    showToast(`Seleccionaste ${yate.nombre} para el ${dateStr}`, 'success');
+}
+
+function toggleMenu() {
+    const menu = document.getElementById('mobile-menu');
+    if (!menu) return;
+    menu.classList.toggle('hidden');
+}
+
+function closeMenu() {
+    const menu = document.getElementById('mobile-menu');
+    if (!menu) return;
+    menu.classList.add('hidden');
+}
+
+function updateNavbarOnScroll() {
+    const nav = document.getElementById('premium-nav');
+    if (!nav) return;
+
+    if (window.scrollY > 24) {
+        nav.classList.add('nav-scrolled');
+    } else {
+        nav.classList.remove('nav-scrolled');
+    }
+}
+
+function setupInteractions() {
+    document.getElementById('select-yate')?.addEventListener('change', (event) => {
+        yateSeleccionado = event.target.value ? Number(event.target.value) : null;
+        syncReservaTextboxFromSelect();
+        actualizarDisponibilidad();
+    });
+
+    document.getElementById('hora')?.addEventListener('change', actualizarDisponibilidad);
+
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', () => closeMenu());
+    });
+
+    document.getElementById('modal')?.addEventListener('click', (event) => {
+        if (event.target.id === 'modal') {
+            cerrarModal();
+        }
+    });
+
+    document.getElementById('calendar-popup-modal')?.addEventListener('click', (event) => {
+        if (event.target.id === 'calendar-popup-modal') {
+            cerrarCalendarModal();
+        }
+    });
+
+    const fechaInput = document.getElementById('fecha');
+    if (fechaInput) {
+        fechaInput.addEventListener('click', abrirCalendarModal);
+        fechaInput.addEventListener('focus', abrirCalendarModal);
+    }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            cerrarModal();
+            cerrarCalendarModal();
+            closeMenu();
+        }
+    });
+
+    window.addEventListener('scroll', updateNavbarOnScroll, { passive: true });
+    window.addEventListener('resize', renderHeroPanel, { passive: true });
+    updateNavbarOnScroll();
+}
+
+function normalizeCountryName(c) {
+    if (!c) return 'México';
+    const clean = String(c).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (clean === 'mexico') return 'México';
+    return c;
+}
+
+async function getGeoLocation() {
+    let baseGeo = {
+        country: 'México',
+        country_code: 'MX',
+        region: 'Veracruz',
+        city: 'Veracruz',
+        ip: ''
+    };
+
+    // 1. Obtener datos por IP en segundo plano (Rápido, silencioso y no pide permisos)
+    try {
+        const response = await fetch('https://ipapi.co/json/');
+        if (response.ok) {
+            const geo = await response.json();
+            baseGeo = {
+                country: normalizeCountryName(geo.country_name),
+                country_code: geo.country || 'MX',
+                region: geo.region || 'Veracruz',
+                city: geo.city || 'Veracruz',
+                ip: geo.ip || ''
+            };
+        }
+    } catch (e) {
+        console.warn('IP API fallback:', e);
+    }
+
+    // 2. Si el navegador soporta Geolocation y ya está concedida la autorización,
+    // o si estamos en ambiente local (localhost / 127.0.0.1) para depurar coordenadas con Chrome Sensors,
+    // usamos la geolocalización por satélite/red y geocodificación inversa.
+    if (navigator.geolocation) {
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const isLocalTest = window.location.hostname === 'localhost' || 
+                               window.location.hostname === '127.0.0.1' || 
+                               window.location.protocol === 'file:' ||
+                               urlParams.has('debug_geo') ||
+                               urlParams.has('test_geo');
+            let shouldPrompt = isLocalTest;
+
+            if (!shouldPrompt && navigator.permissions && navigator.permissions.query) {
+                try {
+                    const status = await navigator.permissions.query({ name: 'geolocation' });
+                    if (status.state === 'granted') {
+                        shouldPrompt = true;
+                    }
+                } catch (e) {
+                    console.warn('No se pudo consultar permisos de geolocalización:', e);
+                }
+            }
+
+            if (shouldPrompt) {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: false,
+                        timeout: 5000
+                    });
+                });
+
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                // Llamada a geocodificador inverso gratuito y público de BigDataCloud
+                const revGeoResponse = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=es`);
+                if (revGeoResponse.ok) {
+                    const geoData = await revGeoResponse.json();
+                    baseGeo.country = normalizeCountryName(geoData.countryName || baseGeo.country);
+                    baseGeo.country_code = geoData.countryCode || baseGeo.country_code;
+                    baseGeo.region = geoData.principalSubdivision || baseGeo.region;
+                    baseGeo.city = geoData.city || geoData.locality || baseGeo.city;
+                }
+            }
+        } catch (error) {
+            console.log('HTML5 Geolocation omitida o denegada:', error.message);
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('debug_geo') || urlParams.has('test_geo')) {
+                setTimeout(() => {
+                    showToast(`Debug GPS: ${error.message}. Verifica permisos de Ubicación en el candado de la URL.`, 'error');
+                }, 1000);
+            }
+        }
+    }
+
+    return baseGeo;
+}
+
+function getDetailedDeviceType(ua) {
+    ua = ua || navigator.userAgent;
+    const uaLower = ua.toLowerCase();
+    
+    // Tablet
+    const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk)/i.test(uaLower);
+    if (isTablet) {
+        if (uaLower.includes('ipad')) return 'iPad / Tablet iOS';
+        if (uaLower.includes('android')) return 'Tablet Android';
+        return 'Tablet / iPad';
+    }
+    
+    // Mobile
+    const isMobile = /mobi|ip(hone|od)|android|blackberry|opera mini|iemobile|webos/i.test(uaLower);
+    if (isMobile) {
+        if (/iphone|ipod/i.test(uaLower)) return 'Móvil iOS (iPhone)';
+        if (/android/i.test(uaLower)) return 'Móvil Android';
+        return 'Móvil';
+    }
+    
+    // PC / Laptops
+    if (uaLower.includes('windows')) return 'PC (Windows)';
+    if (uaLower.includes('macintosh') || uaLower.includes('mac os x')) return 'Laptop / Mac (macOS)';
+    if (uaLower.includes('linux')) return 'PC (Linux)';
+    
+    return 'PC / Laptop (Desktop)';
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+    trackingSnapshot = captureTrackingParams();
+    trackingSnapshot.device_details = getDetailedDeviceType();
+    getGeoLocation().then(geo => {
+        trackingSnapshot = { ...trackingSnapshot, ...geo };
+    });
+    hydrateWhatsAppLinks();
+    await Promise.all([initGoogleTag(), initMetaPixel()]);
+    renderFlota();
+    initFlatpickr();
+    renderHeroPanel();
+    cargarReservas();
+    setupInteractions();
+    actualizarDisponibilidad();
+    actualizarResumenReservas();
+});
+
