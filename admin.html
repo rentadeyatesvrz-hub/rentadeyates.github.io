@@ -1189,6 +1189,8 @@
                         
                         const isChatbot = src.includes('botpress') || src.includes('mia') || src.includes('bot') || 
                                           ch.includes('botpress') || ch.includes('mia') || ch.includes('chat') ||
+                                          ch.includes('instagram') || ch.includes('facebook') || ch.includes('messenger') ||
+                                          src.includes('instagram') || src.includes('facebook') || src.includes('messenger') ||
                                           String(r.via || '').toLowerCase().includes('bot') ||
                                           String(r.via || '').toLowerCase().includes('mia');
 
