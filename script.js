@@ -610,21 +610,11 @@ function renderReservasLoading() {
 }
 
 function reservationItemTemplate(r) {
-    const clientName = r.nombreCliente || r.nombre || 'Cliente';
-    const esModificacion = r.status === 'modified' || r.crmStage === 'reservation_modified' || r.via === 'chatbot_mia_update';
-    const modBadge = esModificacion 
-        ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 ml-2 uppercase tracking-wide">Act.</span>` 
-        : '';
-
     return `
         <div class="reservation-item">
             <div class="reservation-item-content">
-                <div class="reservation-item-headline">
-                    <p class="reservation-item-title">${escapeHtml(r.yate)}</p>
-                </div>
-                <p class="reservation-client-name">${escapeHtml(clientName)}${modBadge}</p>
+                <p class="reservation-item-title">${escapeHtml(r.yate)}</p>
                 <p class="reservation-item-meta">${escapeHtml(r.fecha)} • ${escapeHtml(formatHourLabel(r.hora))}</p>
-                ${r.telefono ? `<p class="reservation-item-secondary font-mono text-xs text-slate-400 mt-1">${escapeHtml(r.telefono)}</p>` : ''}
             </div>
             <button onclick="cancelarReserva('${r.id}')" class="reservation-cancel">Cancelar</button>
         </div>
