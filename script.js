@@ -77,7 +77,7 @@ function trackLeadEvent(payload = {}) {
     }
 
     const sendTo = SITE_CONFIG.googleAdsSendTo;
-    if (typeof window.gtag === 'function' && isRealValue(sendTo, 'AW-XXXXXXXXXX/XXXXXXXXXXXX')) {
+    if (typeof window.gtag === 'function' && sendTo && !sendTo.includes('XXXXXXXXXX')) {
         window.gtag('event', 'conversion', {
             send_to: sendTo,
             value: 1.0,
