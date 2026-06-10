@@ -1123,17 +1123,16 @@ async function realizarReserva() {
             </html>
         `;
 
-        try {
-            await db.collection('mail').add({
-                to: correo,
-                message: {
-                    subject: `Confirmación de tu Reserva: ${embarcacionReservada} ⛵`,
-                    html: emailHtml
-                }
-            });
-        } catch (emailError) {
+        // Trigger mail creation in background (does not block conversion tracking)
+        db.collection('mail').add({
+            to: correo,
+            message: {
+                subject: `Confirmación de tu Reserva: ${embarcacionReservada} ⛵`,
+                html: emailHtml
+            }
+        }).catch(emailError => {
             console.warn('No se pudo registrar el correo de confirmación en la base de datos (inofensivo para el lead):', emailError);
-        }
+        });
 
         trackLeadEvent({
             value: 1,
