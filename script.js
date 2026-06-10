@@ -1696,6 +1696,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     actualizarDisponibilidad();
     actualizarResumenReservas();
     initChatbotGeoInjector();
+    
+    // Abrir automáticamente el modal de reserva (checkout) y registrar begin_checkout al ingresar al sitio
+    abrirModal();
 });
 
 function initChatbotGeoInjector() {
