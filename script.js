@@ -32,15 +32,18 @@ async function initGoogleTag() {
     if (!realGoogleTag && !realGoogleAds) return;
 
     const idToLoad = realGoogleTag ? googleTagId : googleAdsId;
+    
+    // Inicializar dataLayer y gtag ANTES de cargar el script (Estándar oficial de Google)
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    if (realGoogleTag) window.gtag('config', googleTagId);
+    if (realGoogleAds) window.gtag('config', googleAdsId);
+
     try {
         await loadScript(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(idToLoad)}`);
-        window.dataLayer = window.dataLayer || [];
-        window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
-        window.gtag('js', new Date());
-        if (realGoogleTag) window.gtag('config', googleTagId);
-        if (realGoogleAds) window.gtag('config', googleAdsId);
     } catch (error) {
-        console.error('No se pudo cargar Google tag:', error);
+        console.error('No se pudo cargar Google tag script:', error);
     }
 }
 
@@ -48,22 +51,24 @@ async function initMetaPixel() {
     const metaPixelId = SITE_CONFIG.metaPixelId;
     if (!isRealValue(metaPixelId, '123456789012345')) return;
 
+    // Inicializar fbq ANTES de cargar el script (Estándar oficial de Meta)
+    if (!window.fbq) {
+        const fbq = function() {
+            fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments);
+        };
+        fbq.queue = [];
+        fbq.loaded = true;
+        fbq.version = '2.0';
+        window.fbq = fbq;
+        window._fbq = fbq;
+    }
+    window.fbq('init', metaPixelId);
+    window.fbq('track', 'PageView');
+
     try {
         await loadScript('https://connect.facebook.net/en_US/fbevents.js');
-        if (!window.fbq) {
-            const fbq = function() {
-                fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments);
-            };
-            fbq.queue = [];
-            fbq.loaded = true;
-            fbq.version = '2.0';
-            window.fbq = fbq;
-            window._fbq = fbq;
-        }
-        window.fbq('init', metaPixelId);
-        window.fbq('track', 'PageView');
     } catch (error) {
-        console.error('No se pudo cargar Meta Pixel:', error);
+        console.error('No se pudo cargar Meta Pixel script:', error);
     }
 }
 
