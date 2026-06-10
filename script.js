@@ -898,6 +898,15 @@ async function realizarReserva() {
         return;
     }
 
+    // === VALIDACIÓN DE GOOGLE RECAPTCHA V2 ===
+    if (typeof grecaptcha !== 'undefined' && SITE_CONFIG.recaptchaSiteKey) {
+        const recaptchaResponse = grecaptcha.getResponse();
+        if (!recaptchaResponse) {
+            showToast('Por favor, marca la casilla "No soy un robot" antes de confirmar.', 'error');
+            return;
+        }
+    }
+
     const yate = yates.find(y => y.id === yateId);
     const embarcacionReservada = reservaTexto || yate.nombre;
 
@@ -925,6 +934,10 @@ async function realizarReserva() {
         }
 
         const reservaRef = db.collection('reservas').doc();
+        const utmSource = trackingSnapshot.utm_source || (trackingSnapshot.gclid ? 'google_ads' : (trackingSnapshot.fbclid ? 'facebook_ads' : null));
+        const crmSource = SITE_CONFIG.campaignSource || utmSource || 'website';
+        const crmChannel = SITE_CONFIG.campaignChannel || trackingSnapshot.utm_campaign || 'reservation_modal';
+
         const payload = {
             reservationId: reservaRef.id,
             nombreCliente,
@@ -940,14 +953,14 @@ async function realizarReserva() {
             crm: {
                 status: 'new',
                 crmStage: 'reservation_requested',
-                source: 'website',
-                channel: 'reservation_modal',
+                source: crmSource,
+                channel: crmChannel,
                 deviceType: getCRMDeviceType(),
                 tracking: trackingSnapshot
             },
             status: 'new',
             crmStage: 'reservation_requested',
-            source: 'website',
+            source: crmSource,
             tracking: trackingSnapshot,
             whatsappLink: getWhatsAppLink({ nombreCliente, telefono, yate: embarcacionReservada, fecha, hora }),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -1110,13 +1123,17 @@ async function realizarReserva() {
             </html>
         `;
 
-        await db.collection('mail').add({
-            to: correo,
-            message: {
-                subject: `Confirmación de tu Reserva: ${embarcacionReservada} ⛵`,
-                html: emailHtml
-            }
-        });
+        try {
+            await db.collection('mail').add({
+                to: correo,
+                message: {
+                    subject: `Confirmación de tu Reserva: ${embarcacionReservada} ⛵`,
+                    html: emailHtml
+                }
+            });
+        } catch (emailError) {
+            console.warn('No se pudo registrar el correo de confirmación en la base de datos (inofensivo para el lead):', emailError);
+        }
 
         trackLeadEvent({
             value: 1,
@@ -1301,6 +1318,11 @@ function limpiarFormularioReserva() {
     if (hora) hora.value = '';
     if (cumpleanosPicker) cumpleanosPicker.clear();
     if (fechaPicker) fechaPicker.clear();
+    
+    // Resetear reCAPTCHA si está inicializado
+    if (typeof grecaptcha !== 'undefined') {
+        grecaptcha.reset();
+    }
 }
 
 function cerrarModal() {
