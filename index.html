@@ -48,6 +48,9 @@
             // === CONFIGURACIÓN DE META PIXEL (FACEBOOK / INSTAGRAM) ===
             metaPixelId: '123456789012345',                 // Reemplaza con tu ID de Meta Pixel real
             
+            // === CONFIGURACIÓN DE GOOGLE RECAPTCHA ===
+            recaptchaSiteKey: '6LdqnBYtAAAAAIPTR7s4YIkB27gwQSOsv5TGzRSJ',
+            
             instagramUrl: 'https://www.instagram.com/tu_cuenta',
             facebookUrl: 'https://www.facebook.com/tu_pagina',
             whatsappWelcomeMessage: 'Hola, vengo de ver sus Yates en Google. Me gustaría recibir información y cotizar para un paseo privado. Mi nombre es:'
@@ -99,6 +102,8 @@
       ]
     }
     </script>
+    <!-- GOOGLE RECAPTCHA V2 -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="bg-slate-950 text-white font-sans antialiased overflow-x-hidden selection:bg-amber-400/30 selection:text-white">
     <div class="page-ambient" aria-hidden="true">
@@ -389,6 +394,11 @@
                                 </div>
 
                                 <div class="availability-pill" id="availability-status">Selecciona una embarcación y una fecha para ver horarios disponibles.</div>
+
+                                <!-- CONTENEDOR DE RECAPTCHA V2 -->
+                                <div class="flex justify-center my-4">
+                                    <div class="g-recaptcha" data-sitekey="6LdqnBYtAAAAAIPTR7s4YIkB27gwQSOsv5TGzRSJ" data-theme="dark"></div>
+                                </div>
 
                                 <button id="confirmar-btn" onclick="realizarReserva()" class="premium-button w-full text-lg sm:text-xl">Confirmar Reserva</button>
                             </div>
